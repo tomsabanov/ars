@@ -37,7 +37,10 @@ import matplotlib.pyplot as plt
 import math
 import random as rnd
 import numpy as np
-import matplotlib.animation as animation
+#import matplotlib.animation as animation
+from pyglet.resource import animation
+from matplotlib.animation import FuncAnimation
+
 
 
 def rosenbrock(*X):
@@ -51,7 +54,9 @@ def rosenbrock(*X):
 
 def rastrigin(*X):
     A = 10
-    return A * len(X) + sum([(x ** 2 - A * np.cos(2 * math.pi * x)) for x in X])
+    result = A * len(X) + sum([(x ** 2 - A * np.cos(2 * math.pi * x)) for x in X])
+    #print(len(result))
+    return result
 
 
 class Function:
@@ -238,6 +243,9 @@ class PSO:
             # print(len(pos))
             print(str(round(pos[0], 2)) + "," + str(round(pos[1], 2)))
 
+    def return_position(self):
+        return self.positions
+
     def animation_function(self, num, datasets, dots, graph):
         for i in range(self.num_of_agents):
             # lines[i].set_data(datasets[i][0:2, :num])
@@ -283,12 +291,12 @@ class PSO:
                      marker="o", alpha=1.0)[0]
             dots.append(d)
 
-        anim = animation.FuncAnimation(self.fnc.fig, self.animation_function, frames=self.max_iter,
+        anim = FuncAnimation(self.fnc.fig, self.animation_function, frames=self.max_iter,
                                        fargs=(datasets, dots), interval=1000, blit=False)
-
+        #anim.save('pso.mp4', writer='ffmpeg', fps=30)
         plt.show()
 
-
+# Uncomment what you want to run
 if __name__ == "__main__":
     # Example rosenbrock
     x = np.arange(-1.5, 2.0, 0.05)
@@ -297,14 +305,29 @@ if __name__ == "__main__":
 
     rosenbrock_fnc = Function(rosenbrock, X, Y)
 
-    pso = PSO(rosenbrock_fnc, 20, 1000)
-    pso.run_simulation()
-    pso.animate()
+    #pso = PSO(rosenbrock_fnc, 20, 1000)
+    #pso.run_simulation()
+    #pso.animate()
+
 
     # Example rastrigin
-    # x = np.linspace(-4, 4, 50)    
-    # y = np.linspace(-4, 4, 50)    
-    # X, Y = np.meshgrid(x, y)
-    # Z = rastrigin(X, Y)
+    x = np.linspace(-4, 4, 50)
+    y = np.linspace(-4, 4, 50)
+    X, Y = np.meshgrid(x, y)
+    rastrigin_fnc = Function(rastrigin, X, Y)
+
+    # Loop until we find the global optimal solution
+    flag = True
+    while flag:
+        pso = PSO(rastrigin_fnc, 20, 1000)
+        pso.run_simulation()
+        results = pso.return_position()
+        for r in results:
+            if -0.01 < r[0] and r[1] < 0.01 and -0.01 < r[1] and r[1] < 0.01:
+                flag = False
+                break
+
+    pso.animate()
+
 
 
