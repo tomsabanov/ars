@@ -218,7 +218,7 @@ class PSO:
                     self.positions[i][j] = intervals[j][1]
         # print(self.positions[0][0])
 
-    def run_simulation(self):
+    def run_simulation(self, a):
 
         for i in range(self.max_iter):
 
@@ -231,17 +231,25 @@ class PSO:
             # 3. Update new particle positions
             self.update_positions()
 
-            self.a = 0.9 - 0.5 * (i / self.max_iter)
+            if a == "progressive":  # If we want to decrease a from 0.9 to 0.4 over 1000 iterations
+                self.a = 0.9 - 0.5 * (i / self.max_iter)
+            else:                   # If we want to manually set a
+                self.a = a
 
-            if i > 800:
+            if i > 800 and False:
                 self.b = 2
                 self.c = 2
 
             # print(self.a)
 
-        for pos in self.positions:
+        #for pos in self.positions:
             # print(len(pos))
-            print(str(round(pos[0], 2)) + "," + str(round(pos[1], 2)))
+            #print(str(round(pos[0], 2)) + "," + str(round(pos[1], 2)))
+
+    # Return error
+    def get_error(self):
+        #error = math.sqrt(math.pow(self.best_global_position,2) + math.pow(self.best_global_position,2))
+        return abs(self.best_global_position)
 
     def return_position(self):
         return self.positions
@@ -296,6 +304,177 @@ class PSO:
         #anim.save('pso.mp4', writer='ffmpeg', fps=30)
         plt.show()
 
+# Will find a configuration resulting in the solution (0,0)
+def rastrigin_experiment_find_optimal():
+    # Example rastrigin
+    x = np.linspace(-4, 4, 50)
+    y = np.linspace(-4, 4, 50)
+    X, Y = np.meshgrid(x, y)
+    rastrigin_fnc = Function(rastrigin, X, Y)
+
+    # Loop until we find the global optimal solution
+    flag = True
+    while flag:
+        pso = PSO(rastrigin_fnc, 20, 1000)
+        pso.run_simulation("progressive")
+        results = pso.return_position()
+        for r in results:
+           if -0.01 < r[0] and r[0] < 0.01 and -0.01 < r[1] and r[1] < 0.01:
+               flag = False
+               break
+
+    pso.animate()
+
+def rastrigin_experiment_a_constant():
+    # Example rastrigin
+    x = np.linspace(-4, 4, 50)
+    y = np.linspace(-4, 4, 50)
+    X, Y = np.meshgrid(x, y)
+    rastrigin_fnc = Function(rastrigin, X, Y)
+
+    # Loop until we find the global optimal solution
+    flag = True
+    experiment_results = []
+    for i in np.arange(0,2,0.1):
+        immediate_results = []
+        for j in range(10):
+            pso = PSO(rastrigin_fnc, 20, 1000)
+            pso.run_simulation(i)
+            immediate_results.append(pso.get_error())
+
+        experiment_results.append(sum(immediate_results) / len(immediate_results))
+
+    pso.animate()
+    print(experiment_results)
+
+    f = open("a_constant_results.txt", "w")
+    f.write(str(experiment_results))
+
+def rosenbrock_experiment_iteration_comparison():
+    # Example rastrigin
+    x = np.linspace(-4, 4, 50)
+    y = np.linspace(-4, 4, 50)
+    X, Y = np.meshgrid(x, y)
+    rastrigin_fnc = Function(rosenbrock, X, Y)
+
+    # Loop until we find the global optimal solution
+    flag = True
+    experiment_results_constant = []
+    for i in np.arange(100,2100,100):
+        immediate_results = []
+        print(str(i) + " - constant")
+        for j in range(10):
+            pso = PSO(rastrigin_fnc, 20, i) # Varying the amount of iterations
+            pso.run_simulation(0.4) # Constant
+            immediate_results.append(pso.get_error())
+
+        experiment_results_constant.append(sum(immediate_results) / len(immediate_results))
+    print(experiment_results_constant)
+    f = open("a_constant_results_varying_iterations_rosenbrock.txt", "w")
+    f.write(str(experiment_results_constant))
+
+    experiment_results_linear = []
+    for i in np.arange(100, 2100, 100):
+        immediate_results = []
+        print(str(i) + " - linear")
+        for j in range(10):
+            pso = PSO(rastrigin_fnc, 20, i)
+            pso.run_simulation("progressive")  # Varying the amount of iterations
+            immediate_results.append(pso.get_error())
+
+        experiment_results_linear.append(sum(immediate_results) / len(immediate_results))
+
+    print(experiment_results_linear)
+    f = open("a_linear_results_varying_iterations_rosenbrock.txt", "w")
+    f.write(str(experiment_results_linear))
+
+    pso.animate()
+
+
+def rastrigin_experiment_iteration_comparison():
+    # Example rastrigin
+    x = np.linspace(-4, 4, 50)
+    y = np.linspace(-4, 4, 50)
+    X, Y = np.meshgrid(x, y)
+    rastrigin_fnc = Function(rastrigin, X, Y)
+
+    # Loop until we find the global optimal solution
+    flag = True
+    experiment_results_constant = []
+    for i in np.arange(0,2000,100):
+        immediate_results = []
+        print(str(i) + " - constant")
+        for j in range(10):
+            pso = PSO(rastrigin_fnc, 20, i) # Varying the amount of iterations
+            pso.run_simulation(0.4) # Constant
+            immediate_results.append(pso.get_error())
+
+        experiment_results_constant.append(sum(immediate_results) / len(immediate_results))
+    print(experiment_results_constant)
+    f = open("a_constant_results_varying_iterations.txt", "w")
+    f.write(str(experiment_results_constant))
+
+    experiment_results_linear = []
+    for i in np.arange(0, 2000, 100):
+        immediate_results = []
+        print(str(i) + " - linear")
+        for j in range(10):
+            pso = PSO(rastrigin_fnc, 20, i)
+            pso.run_simulation("progressive")  # Varying the amount of iterations
+            immediate_results.append(pso.get_error())
+
+        experiment_results_linear.append(sum(immediate_results) / len(immediate_results))
+
+    print(experiment_results_linear)
+    f = open("a_linear_results_varying_iterations.txt", "w")
+    f.write(str(experiment_results_linear))
+
+    pso.animate()
+
+
+
+
+def plot_experiment():
+    f = open("a_constant_results.txt").readline().replace("[", "").replace("]", "").replace(" ", "").split(",")
+    r = [float(e) for e in f]
+    print(r)
+    plt.plot(r)
+    plt.xlabel("Constant value for 'a'")
+    plt.ylabel("Avg Error")
+    plt.show()
+
+def plot_experiment_training_size1():
+    f = open("a_constant_results_varying_iterations.txt").readline().replace("[", "").replace("]", "").replace(" ", "").split(",")
+    r_constant = [float(e) for e in f]
+    print(r_constant)
+
+    f = open("a_linear_results_varying_iterations.txt").readline().replace("[", "").replace("]", "").replace(" ","").split(",")
+    r_linear = [float(e) for e in f]
+
+    plt.plot(np.arange(1, 2000, 100), r_constant, label="Constant 'a'=0.4, b and c = 2")
+    plt.plot( np.arange(1, 2000, 100), r_linear, label="Linear Decreasing 'a', b and c = 2")
+    plt.xlabel("Iterations")
+    plt.ylabel("Avg Error")
+    plt.legend()
+    plt.title("Error Comparison of Linear Decreasing 'a' vs Constant 'a' Over Varying Iterations with a Population Size of 20 Particles over Rastrigin.")
+    plt.show()
+
+def plot_experiment_training_size1_rosenbrock():
+    f = open("a_constant_results_varying_iterations_rosenbrock.txt").readline().replace("[", "").replace("]", "").replace(" ", "").split(",")
+    r_constant = [float(e) for e in f]
+    print(r_constant)
+
+    f = open("a_linear_results_varying_iterations_rosenbrock.txt").readline().replace("[", "").replace("]", "").replace(" ","").split(",")
+    r_linear = [float(e) for e in f]
+
+    plt.plot(np.arange(0, 2000, 100), r_constant, label="Constant 'a'=0.4, b and c = 2")
+    plt.plot( np.arange(0, 2000, 100), r_linear, label="Linear Decreasing 'a', b and c = 2")
+    plt.xlabel("Iterations")
+    plt.ylabel("Avg Error")
+    plt.legend()
+    plt.title("Error Comparison of Linear Decreasing 'a' vs Constant 'a' Over Varying Iterations with a Population Size of 20 Particles over Rosenbrock.")
+    plt.show()
+
 # Uncomment what you want to run
 if __name__ == "__main__":
     # Example rosenbrock
@@ -309,25 +488,11 @@ if __name__ == "__main__":
     #pso.run_simulation()
     #pso.animate()
 
+    #rastrigin_experiment_find_optimal()
+    #rastrigin_experiment_a_constant()
+    #rastrigin_experiment_iteration_comparison()
+    rosenbrock_experiment_iteration_comparison()
 
-    # Example rastrigin
-    x = np.linspace(-4, 4, 50)
-    y = np.linspace(-4, 4, 50)
-    X, Y = np.meshgrid(x, y)
-    rastrigin_fnc = Function(rastrigin, X, Y)
-
-    # Loop until we find the global optimal solution
-    flag = True
-    while flag:
-        pso = PSO(rastrigin_fnc, 20, 1000)
-        pso.run_simulation()
-        results = pso.return_position()
-        for r in results:
-            if -0.01 < r[0] and r[1] < 0.01 and -0.01 < r[1] and r[1] < 0.01:
-                flag = False
-                break
-
-    pso.animate()
-
-
-
+    #plot_experiment()
+    #plot_experiment_training_size1() #rastrigin
+    plot_experiment_training_size1_rosenbrock()
