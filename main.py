@@ -239,7 +239,7 @@ class PSO:
             else:                   # If we want to manually set a
                 self.a = a
 
-            if i > 800 and False:
+            if i > 800 and a == "progressive":
                 self.b = 2
                 self.c = 2
 
@@ -252,7 +252,8 @@ class PSO:
     # Return error
     def get_error(self):
         #error = math.sqrt(math.pow(self.best_global_position,2) + math.pow(self.best_global_position,2))
-        return abs(self.best_global_position)
+        error = math.sqrt(math.pow(self.positions.tolist()[self.best_global_position][0],2) + math.pow(self.positions.tolist()[self.best_global_position][1],2))
+        return error
 
     def return_position(self):
         return self.positions
@@ -353,6 +354,92 @@ def rastrigin_experiment_a_constant():
     f = open("a_constant_results.txt", "w")
     f.write(str(experiment_results))
 
+def rosenbrock_experiment_population_comparison():
+    # Example rastrigin
+    x = np.linspace(-4, 4, 50)
+    y = np.linspace(-4, 4, 50)
+    X, Y = np.meshgrid(x, y)
+    rosenbrock_fnc = Function(rosenbrock, X, Y)
+
+    # Loop until we find the global optimal solution
+    #flag = True
+    #experiment_results_constant = []
+    #for i in np.arange(1,50,1):
+    #    immediate_results = []
+    #    print(str(i) + " - constant")
+    #    for j in range(10):
+    #        pso = PSO(rosenbrock_fnc, i, 1000) # Varying the amount of iterations
+    #        pso.run_simulation(0.4) # Constant
+    #        immediate_results.append(pso.get_error())
+    #    print(immediate_results)
+
+        #experiment_results_constant.append(sum(immediate_results) / len(immediate_results))
+    #    experiment_results_constant.append(sum(abs(number) for number in immediate_results) / 10)
+    #print(experiment_results_constant)
+    #f = open("a_constant_results_varying_population_rosenbrock.txt", "w")
+    #f.write(str(experiment_results_constant))
+
+    experiment_results_linear = []
+    for i in np.arange(1, 50, 1):
+        immediate_results = []
+        print(str(i) + " - linear")
+        for j in range(10):
+            pso = PSO(rosenbrock_fnc, i, 1000)
+            pso.run_simulation("progressive")  # Varying the amount of iterations
+            immediate_results.append(pso.get_error())
+
+        experiment_results_linear.append(sum(abs(number) for number in immediate_results) / 10)
+
+    print(experiment_results_linear)
+    f = open("a_linear_results_varying_population_rosenbrock.txt", "w")
+    f.write(str(experiment_results_linear))
+
+    pso.animate()
+
+def rastrigin_experiment_population_comparison():
+    # Example rastrigin
+    x = np.linspace(-4, 4, 50)
+    y = np.linspace(-4, 4, 50)
+    X, Y = np.meshgrid(x, y)
+    rosenbrock_fnc = Function(rosenbrock, X, Y)
+
+    # Loop until we find the global optimal solution
+   # flag = True
+   # experiment_results_constant = []
+   # for i in np.arange(1,50,1):
+   #     immediate_results = []
+   #     print(str(i) + " - constant")
+   #     for j in range(10):
+   #         pso = PSO(rosenbrock_fnc, i, 1000) # Varying the amount of iterations
+   #         pso.run_simulation(0.4) # Constant
+   #         immediate_results.append(pso.get_error())
+   #     print(immediate_results)#
+
+   #     #experiment_results_constant.append(sum(immediate_results) / len(immediate_results))
+   #     experiment_results_constant.append(sum(abs(number) for number in immediate_results) / 10)
+   # print(experiment_results_constant)
+   # f = open("a_constant_results_varying_population_rastrigin.txt", "x")
+   # f.write(str(experiment_results_constant))
+
+    experiment_results_linear = []
+    for i in np.arange(1, 50, 1):
+        immediate_results = []
+        print(str(i) + " - linear")
+        for j in range(7):
+            pso = PSO(rosenbrock_fnc, i, 1000)
+            pso.run_simulation("progressive")  # Varying the amount of iterations
+            immediate_results.append(pso.get_error())
+        print(immediate_results)
+        experiment_results_linear.append(sum(abs(number) for number in immediate_results) / 7)
+
+    print(experiment_results_linear)
+    f = open("a_linear_results_varying_population_rastrigin.txt", "x")
+    f.write(str(experiment_results_linear))
+
+    pso.animate()
+
+
+
 def rosenbrock_experiment_iteration_comparison():
     # Example rastrigin
     x = np.linspace(-4, 4, 50)
@@ -371,7 +458,7 @@ def rosenbrock_experiment_iteration_comparison():
             pso.run_simulation(0.4) # Constant
             immediate_results.append(pso.get_error())
 
-        experiment_results_constant.append(sum(immediate_results) / len(immediate_results))
+        experiment_results_constant.append(sum(immediate_results) / 10)
     print(experiment_results_constant)
     f = open("a_constant_results_varying_iterations_rosenbrock.txt", "w")
     f.write(str(experiment_results_constant))
@@ -385,7 +472,7 @@ def rosenbrock_experiment_iteration_comparison():
             pso.run_simulation("progressive")  # Varying the amount of iterations
             immediate_results.append(pso.get_error())
 
-        experiment_results_linear.append(sum(immediate_results) / len(immediate_results))
+        experiment_results_linear.append(sum(immediate_results) / 10)
 
     print(experiment_results_linear)
     f = open("a_linear_results_varying_iterations_rosenbrock.txt", "w")
@@ -412,10 +499,10 @@ def rastrigin_experiment_iteration_comparison():
             pso.run_simulation(0.4) # Constant
             immediate_results.append(pso.get_error())
 
-        experiment_results_constant.append(sum(immediate_results) / len(immediate_results))
-    print(experiment_results_constant)
-    f = open("a_constant_results_varying_iterations.txt", "w")
-    f.write(str(experiment_results_constant))
+        experiment_results_constant.append(sum(immediate_results) / 10)
+    p#rint(experiment_results_constant)
+    #f = open("a_constant_results_varying_iterations.txt", "w")
+    #f.write(str(experiment_results_constant))
 
     experiment_results_linear = []
     for i in np.arange(100, 2100, 100):
@@ -426,7 +513,7 @@ def rastrigin_experiment_iteration_comparison():
             pso.run_simulation("progressive")  # Varying the amount of iterations
             immediate_results.append(pso.get_error())
 
-        experiment_results_linear.append(sum(immediate_results) / len(immediate_results))
+        experiment_results_linear.append(sum(immediate_results) / 10)
 
     print(experiment_results_linear)
     f = open("a_linear_results_varying_iterations.txt", "w")
@@ -454,8 +541,8 @@ def plot_experiment_training_size1():
     f = open("a_linear_results_varying_iterations.txt").readline().replace("[", "").replace("]", "").replace(" ","").split(",")
     r_linear = [float(e) for e in f]
 
-    plt.plot(np.arange(1, 2000, 100), r_constant, label="Constant 'a'=0.4, b and c = 2")
-    plt.plot( np.arange(1, 2000, 100), r_linear, label="Linear Decreasing 'a', b and c = 2")
+    plt.plot(np.arange(100, 2100, 100), r_constant, label="Constant 'a'=0.4, b and c = 2")
+    plt.plot( np.arange(100, 2100, 100), r_linear, label="Linear Decreasing 'a', b and c = 2")
     plt.xlabel("Iterations")
     plt.ylabel("Avg Error")
     plt.legend()
@@ -470,13 +557,47 @@ def plot_experiment_training_size1_rosenbrock():
     f = open("a_linear_results_varying_iterations_rosenbrock.txt").readline().replace("[", "").replace("]", "").replace(" ","").split(",")
     r_linear = [float(e) for e in f]
 
-    plt.plot(np.arange(0, 2000, 100), r_constant, label="Constant 'a'=0.4, b and c = 2")
-    plt.plot( np.arange(0, 2000, 100), r_linear, label="Linear Decreasing 'a', b and c = 2")
+    plt.plot(np.arange(100, 2100, 100), r_constant, label="Constant 'a'=0.4, b and c = 2")
+    plt.plot( np.arange(100, 2100, 100), r_linear, label="Linear Decreasing 'a', b and c = 2")
     plt.xlabel("Iterations")
     plt.ylabel("Avg Error")
     plt.legend()
     plt.title("Error Comparison of Linear Decreasing 'a' vs Constant 'a' Over Varying Iterations with a Population Size of 20 Particles over Rosenbrock.")
     plt.show()
+
+
+def plot_experiment_population_size_rosenbrock():
+    f = open("a_constant_results_varying_population_rosenbrock.txt").readline().replace("[", "").replace("]", "").replace(" ", "").split(",")
+    r_constant = [float(e) for e in f]
+    print(r_constant)
+
+    f = open("a_linear_results_varying_population_rosenbrock.txt").readline().replace("[", "").replace("]", "").replace(" ","").split(",")
+    r_linear = [float(e) for e in f]
+
+    plt.plot(np.arange(1, 50, 1), r_constant, label="Constant 'a'=0.4, b and c = 2")
+    plt.plot( np.arange(1, 50, 1), r_linear, label="Linear Decreasing 'a'")
+    plt.xlabel("Population")
+    plt.ylabel("Avg Error")
+    plt.legend()
+    plt.title("Error Comparison of Linear Decreasing 'a' vs Constant 'a' Over Varying Population with a Training Size of 1000 Iterations over Rosenbrock.")
+    plt.show()
+
+def plot_experiment_population_size_rastrigin():
+    f = open("a_constant_results_varying_population_rastrigin.txt").readline().replace("[", "").replace("]", "").replace(" ", "").split(",")
+    r_constant = [float(e) for e in f]
+    print(r_constant)
+
+    f = open("a_linear_results_varying_population_rastrigin.txt").readline().replace("[", "").replace("]", "").replace(" ","").split(",")
+    r_linear = [float(e) for e in f]
+
+    plt.plot(np.arange(1, 50, 1), r_constant, label="Constant 'a'=0.4, b and c = 2")
+    plt.plot( np.arange(1, 50, 1), r_linear, label="Linear Decreasing 'a'")
+    plt.xlabel("Population")
+    plt.ylabel("Avg Error")
+    plt.legend()
+    plt.title("Error Comparison of Linear Decreasing 'a' vs Constant 'a' Over Varying Population with a Training Size of 1000 Iterations over Rastrigin.")
+    plt.show()
+
 
 # Uncomment what you want to run
 if __name__ == "__main__":
@@ -493,9 +614,14 @@ if __name__ == "__main__":
 
     #rastrigin_experiment_find_optimal()
     #rastrigin_experiment_a_constant()
-    rastrigin_experiment_iteration_comparison()
+    #rastrigin_experiment_iteration_comparison()
     #rosenbrock_experiment_iteration_comparison()
+    #rosenbrock_experiment_population_comparison()
+    #rastrigin_experiment_population_comparison()
+
 
     #plot_experiment()
-    plot_experiment_training_size1() #rastrigin
+    #plot_experiment_training_size1() #rastrigin
     #plot_experiment_training_size1_rosenbrock()
+    #plot_experiment_population_size_rosenbrock()
+    plot_experiment_population_size_rastrigin()
