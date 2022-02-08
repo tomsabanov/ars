@@ -401,7 +401,7 @@ def rastrigin_experiment_iteration_comparison():
     # Loop until we find the global optimal solution
     flag = True
     experiment_results_constant = []
-    for i in np.arange(0,2000,100):
+    for i in np.arange(100,2100,100):
         immediate_results = []
         print(str(i) + " - constant")
         for j in range(10):
@@ -415,7 +415,7 @@ def rastrigin_experiment_iteration_comparison():
     f.write(str(experiment_results_constant))
 
     experiment_results_linear = []
-    for i in np.arange(0, 2000, 100):
+    for i in np.arange(100, 2100, 100):
         immediate_results = []
         print(str(i) + " - linear")
         for j in range(10):
