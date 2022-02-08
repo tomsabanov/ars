@@ -232,7 +232,10 @@ class PSO:
             self.update_positions()
 
             if a == "progressive":  # If we want to decrease a from 0.9 to 0.4 over 1000 iterations
-                self.a = 0.9 - 0.5 * (i / self.max_iter)
+                if i <= 1000:
+                    self.a = 0.9 - 0.5 * (i / 1000)
+                else:
+                    self.a = 0.4
             else:                   # If we want to manually set a
                 self.a = a
 
@@ -355,7 +358,7 @@ def rosenbrock_experiment_iteration_comparison():
     x = np.linspace(-4, 4, 50)
     y = np.linspace(-4, 4, 50)
     X, Y = np.meshgrid(x, y)
-    rastrigin_fnc = Function(rosenbrock, X, Y)
+    rosenbrock_fnc = Function(rosenbrock, X, Y)
 
     # Loop until we find the global optimal solution
     flag = True
@@ -364,7 +367,7 @@ def rosenbrock_experiment_iteration_comparison():
         immediate_results = []
         print(str(i) + " - constant")
         for j in range(10):
-            pso = PSO(rastrigin_fnc, 20, i) # Varying the amount of iterations
+            pso = PSO(rosenbrock_fnc, 30, i) # Varying the amount of iterations
             pso.run_simulation(0.4) # Constant
             immediate_results.append(pso.get_error())
 
@@ -378,7 +381,7 @@ def rosenbrock_experiment_iteration_comparison():
         immediate_results = []
         print(str(i) + " - linear")
         for j in range(10):
-            pso = PSO(rastrigin_fnc, 20, i)
+            pso = PSO(rosenbrock_fnc, 30, i)
             pso.run_simulation("progressive")  # Varying the amount of iterations
             immediate_results.append(pso.get_error())
 
@@ -405,7 +408,7 @@ def rastrigin_experiment_iteration_comparison():
         immediate_results = []
         print(str(i) + " - constant")
         for j in range(10):
-            pso = PSO(rastrigin_fnc, 20, i) # Varying the amount of iterations
+            pso = PSO(rastrigin_fnc, 30, i) # Varying the amount of iterations
             pso.run_simulation(0.4) # Constant
             immediate_results.append(pso.get_error())
 
@@ -419,7 +422,7 @@ def rastrigin_experiment_iteration_comparison():
         immediate_results = []
         print(str(i) + " - linear")
         for j in range(10):
-            pso = PSO(rastrigin_fnc, 20, i)
+            pso = PSO(rastrigin_fnc, 30, i)
             pso.run_simulation("progressive")  # Varying the amount of iterations
             immediate_results.append(pso.get_error())
 
@@ -490,9 +493,9 @@ if __name__ == "__main__":
 
     #rastrigin_experiment_find_optimal()
     #rastrigin_experiment_a_constant()
-    #rastrigin_experiment_iteration_comparison()
-    rosenbrock_experiment_iteration_comparison()
+    rastrigin_experiment_iteration_comparison()
+    #rosenbrock_experiment_iteration_comparison()
 
     #plot_experiment()
-    #plot_experiment_training_size1() #rastrigin
-    plot_experiment_training_size1_rosenbrock()
+    plot_experiment_training_size1() #rastrigin
+    #plot_experiment_training_size1_rosenbrock()
