@@ -85,8 +85,8 @@ class Object():
 
         # For circle type we need to get the upper left corner of the box surrounding the circle
         if self.type == "circle":
-            origin_start = Point(self.coordinates.X - self.bounds[0].P2.X, self.coordinates.Y - self.bounds[0].P2.Y)
-            origin_end = Point(self.coordinates.X + self.bounds[0].P2.X, self.coordinates.Y + self.bounds[0].P2.Y)
+            origin_start = Point(self.coordinates.X - self.bounds[0].P2.X, self.coordinates.Y - self.bounds[0].P2.X)
+            origin_end = Point(self.coordinates.X + self.bounds[0].P2.X, self.coordinates.Y + self.bounds[0].P2.X)
             return Vector(origin_start, origin_end)
         elif self.type == "line":
             origin_start = Point(self.coordinates.X + self.bounds[0].P1.X, self.coordinates.Y + self.bounds[0].P1.Y)
