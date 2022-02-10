@@ -1,0 +1,3 @@
+
+
+# Agent implements an objects but also has an orientation and parameters for moving, sensors...
