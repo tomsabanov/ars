@@ -1,81 +1,118 @@
+
+import sys
 from tkinter import *
 
-from utils.key_tracker import KeyTracker
+
 from utils.object import Object
 from utils.vector import Vector, Point
 from utils.agent import Agent
 
-def return_pressed(event):
-    print('Return key pressed.')
+class Settings:
+    def __init__(self, w=600, h=600, delay=10, margin=10):
+        self.BOARD_WIDTH = w
+        self.BOARD_HEIGHT = h
+        self.DELAY = delay
+        self.MARGIN = margin
 
-def key_press(e):
-   print("a")
+class UI(Canvas):
 
-def key_released(e):
-   print("b")
+    def __init__(self, sett: Settings):
+        super().__init__(width=sett.BOARD_WIDTH+sett.MARGIN*2, height=sett.BOARD_HEIGHT + sett.MARGIN*2,
+            background="white", highlightthickness=0)
 
-class UI():
-    def __init__(self, dimensions, objects):
-        self.dimensions = dimensions
-        self.objects = objects
-        self.margin = 10
-
-
-
-    def show(self):
-        root = Tk()
-        root.title("Interface")
-        root.geometry(str(self.dimensions[0]) + "x" + str(self.dimensions[1]) + "+" + str(self.margin*2) + "+" + str(self.margin*2))
-        # Create canvas
-        c = Canvas(root, height=self.dimensions[0]+self.margin*2, width=self.dimensions[1]+self.margin*2, bg="gray")
+        self.settings = sett
+        self.setup()
+        self.pack()
 
 
-        # Implement an example of an agent:
-        agent = Agent(Point(150,150), c, self.margin)
+    def setup(self):
+        # Setup the UI/agent
 
-        #agent = c.create_oval(100,100,200,200, fill="red")
-        #agent_vision = c.create_line()
+        # TODO: Map should be a hollow polygon, it should also be read from a file
+        #       and scaled appropriately to the dimensions of the UI
+        self.map = [
+            Object(Point(0,0), [Vector(Point(0,0),Point(600,0))], type="line"),
+            Object(Point(600,0), [Vector(Point(0, 0), Point(0, 600))], type="line"),
+            Object(Point(0, 600), [Vector(Point(0, 0), Point(600, 0))], type="line"),
+            Object(Point(0, 0), [Vector(Point(0, 0), Point(0, 600))], type="line"),
+        ]
+        for l in self.map:
+            c_coords = l.get_ui_coordinates()
+            self.create_line(c_coords.P1.X+self.settings.MARGIN, 
+                            c_coords.P1.Y+self.settings.MARGIN, 
+                            c_coords.P2.X+self.settings.MARGIN, 
+                            c_coords.P2.Y+self.settings.MARGIN, width=5)
 
-        # Keeps track of the commands from the UI
-        keytracker = KeyTracker(agent, c)
-
-        # Loop and display objects
-        # When drawing each object we add the margin to have it visible on the frame
-        for object in self.objects:
-            if object.type == "line":
-                c_coords = object.get_ui_coordinates()
-                c.create_line(c_coords.P1.X+self.margin, c_coords.P1.Y+self.margin, c_coords.P2.X+self.margin, c_coords.P2.Y+self.margin, width=5)
-            elif object.type == "circle":
-                c_ui_origin = object.get_ui_coordinates()
-                c.create_oval(c_ui_origin.P1.X+self.margin, c_ui_origin.P1.Y+self.margin, c_ui_origin.P2.X+self.margin, c_ui_origin.P2.Y+self.margin, fill="blue")
-
-        # Bind the keyboard commands to specific actions in KeyTracker
-        root.bind('<Up>', keytracker.key_up)
-        root.bind('<Down>', keytracker.key_down)
-        root.bind('<Left>', keytracker.key_left)
-        root.bind('<Right>', keytracker.key_right)
-
-        c.pack()
-        root.mainloop()
+        
+        self.setup_agent()
 
 
-if __name__ == "__main__":
-
-    # Some objects:
-    obj1 = Object(Point(400, 100), [Vector(Point(0, 0), Point(50, 50))], type="circle")
-    #obj1.translate_coordinates(Point(200,200))
+        self.bind_all("<Key>", self.onKeyPressed)
+        self.after(self.settings.DELAY, self.onTimer)
 
 
-    objects = [
-        # Map borders:
-        Object(Point(0,0), [Vector(Point(0,0),Point(600,0))], type="line"),
-        Object(Point(600,0), [Vector(Point(0, 0), Point(0, 600))], type="line"),
-        Object(Point(0, 600), [Vector(Point(0, 0), Point(600, 0))], type="line"),
-        Object(Point(0, 0), [Vector(Point(0, 0), Point(0, 600))], type="line"),
+    def setup_agent(self):
+        # Setup the agent and his canvas objects
 
-        obj1
-    ]
+        self.agent = Agent(Point(
+                            int(self.settings.BOARD_WIDTH/2), 
+                            int(self.settings.BOARD_HEIGHT/2)
+                            ),
+                            radius=50 
+                    )
+    
+        c_coords = self.agent.get_circle_coordinates()
+        self.agent_circle = self.create_oval(c_coords.P1.X, c_coords.P1.Y, c_coords.P2.X, c_coords.P2.Y, fill="red")
 
-    ui = UI([600, 600], objects)
+        l_coords = self.agent.get_line_coordinates()
+        self.agent_line = self.create_line(l_coords.P1.X, l_coords.P1.Y, l_coords.P2.X, l_coords.P2.Y, width=5)
 
-    ui.show()
+
+
+    def delete_agent_ui(self):
+        self.delete(self.agent_circle)
+        self.delete(self.agent_line)
+
+    def update_agent_ui(self):
+        self.delete_agent_ui()
+
+        c_coords = self.agent.get_circle_coordinates()
+        self.agent_circle = self.create_oval(c_coords.P1.X, c_coords.P1.Y, c_coords.P2.X, c_coords.P2.Y, fill="red")
+
+        l_coords = self.agent.get_line_coordinates()
+        self.agent_line = self.create_line(l_coords.P1.X, l_coords.P1.Y, l_coords.P2.X, l_coords.P2.Y, width=5)
+
+
+    def onKeyPressed(self, e):
+        # Key tracking
+
+        key = e.keysym
+        if key == "Escape":
+            sys.exit()
+        
+        # Provide the agent the key press so it can react
+        self.agent.on_key_press(key)
+        
+
+    def onTimer(self):
+        # We update the agent and then the agent 
+        # canvas objects on each timer event and then redraw them
+        self.agent.update()
+        
+        self.update_agent_ui()
+
+        
+        self.after(self.settings.DELAY, self.onTimer)
+
+
+def main():
+    root = Tk()
+
+    settings = Settings()
+    ui = UI(settings)
+
+    root.mainloop()
+
+
+if __name__ == '__main__':
+    main()
