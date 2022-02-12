@@ -51,6 +51,10 @@ class Object():
     def translate_coordinates(self, point):
         self.coordinates = Point(self.coordinates.X + point.X, self.coordinates.Y + point.Y)
 
+    # Set the center of the object to the provided point
+    def update_coordinates(self,point):
+        self.coordinates = point
+
     # Function to rotate an object by an angle, having its center as pivot
     # POV FP
     def rotate(self, angle):

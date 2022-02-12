@@ -1,73 +1,136 @@
 import math
+import numpy as np
 
 from utils.object import Object
 from utils.vector import Vector, Point
 
 
-# Agent implements an objects but also has an orientation and parameters for moving, sensors...
-agent_radius = 50
+class MotionModel():
+    def __init__(self, position, l):
+        
+        self.position = position # center point of the robot
+
+        # Left and right motor speeds
+        self.vl = 0
+        self.vr = 0
+
+        self.l = l # distance between the wheels of the robot (we can use 2*radius)
+
+        self.theta = 0 # angle
+        self.R = 0
+        self.omega = 0
+    
+    def update_speed(self, vl, vr):
+        self.vl = self.vl + vl
+        self.vr = self.vr + vr
+    
+    def reset_speed(self):
+        self.vl = 0
+        self.vr = 0
+
+    def update_position(self):
+        print("Speed ")
+        print(self.vl)
+        print(self.vr)
+        # Calculate R, omega, ICC and new position
+        if self.vr == self.vl:
+            # We have forward linear motion, theta stays the same, 
+            # we only update the position
+            self.R = 0
+            self.omega = 0
+
+            new_position = Point(self.position.X + self.vr * math.cos(self.theta),
+                                     self.position.Y + self.vr * math.sin(self.theta))
+            
+            self.position = new_position
+
+            return (self.position, self.theta)
+
+        # We have a rotation
+        
+        self.R = (self.l/2)*( (self.vr + self.vl)/(self.vr - self.vl) )
+        self.omega = (self.vr-self.vl)/self.l
+
+        self.ICCx = self.position.X - self.R * math.sin(self.theta)
+        self.ICCy = self.position.Y + self.R * math.cos(self.theta)
+
+        # Now let's calculate the new position of the agent
+        A1 = np.array([[math.cos(self.omega), -math.sin(self.omega), 0],
+                      [math.sin(self.omega), math.cos(self.omega), 0],
+                      [0,0,1]])
+        A2 = np.array([self.position.X - self.ICCx, 
+                        self.position.Y - self.ICCy,
+                        self.theta])
+        A3 = np.array([self.ICCx, self.ICCy, self.omega])
+
+        P = A1.dot(A2) + A3
+
+        new_position = Point(P[0],P[1])
+
+        self.position = new_position
+        self.theta = P[2]
+        
+        # We return the updated position and the theta angle
+        return (self.position, self.theta)
+
 
 class Agent():
-    def __init__(self, coordinates, Canvas, margin):
-        self.coordinates = coordinates
-        self.Canvas = Canvas
-                                                     # Radius Bound is a horizontal vector
-        self.circleObject = Object(self.coordinates, [Vector(Point(0,0), Point(agent_radius, 0))], type="circle")
+    def __init__(self, center, radius):
+        self.position = center
+        self.radius = radius
+        self.theta = 0
+
+        self.speed_increment = 1
+
+        self.motion_model = MotionModel(self.position,self.radius*2)
+
+        # Radius Bound is a horizontal vector
+        self.circleObject = Object(self.position, [Vector(Point(0,0), Point(self.radius, 0))], type="circle")
+
         # Create object line that will serve as vision. By default we put the cast to be twice the agent's radius
-        self.lineObject = Object(self.coordinates, [Vector(Point(0,0), Point(agent_radius*2, 0))], type="line")
-        self.lineObject.rotate(math.pi / 2) # Rotate it to face the direction we want
+        self.lineObject = Object(self.position, [Vector(Point(0,0), Point(self.radius*2, 0))], type="line")
 
-        self.margin = margin
-
-        self.generate_circle()
-
-    def generate_circle(self):
-        c_coords = self.circleObject.get_ui_coordinates()   # Get translated object coordinates to show in the UI
-        #c_coords.print()
-        print("coords agent: " + str(c_coords.P1.X) + "," + str(c_coords.P1.Y) + "," + str(c_coords.P2.X) + "," + str(c_coords.P2.Y))
-        self.circle = self.Canvas.create_oval(c_coords.P1.X+self.margin, c_coords.P1.Y+self.margin, c_coords.P2.X+self.margin, c_coords.P2.Y+self.margin, fill="red")
-        l_coords = self.lineObject.get_ui_coordinates()
-        self.vision = self.Canvas.create_line(l_coords.P1.X + self.margin, l_coords.P1.Y + self.margin, l_coords.P2.X + self.margin, l_coords.P2.Y + self.margin, width=5)
+        self.agent_actions = {
+            "w": (self.motion_model.update_speed, [self.speed_increment, 0]),
+            "s": (self.motion_model.update_speed, [-self.speed_increment, 0]),
+            "o": (self.motion_model.update_speed, [0, self.speed_increment]),
+            "l": (self.motion_model.update_speed, [0, -self.speed_increment]),
+            "x": (self.motion_model.reset_speed, []),
+            "t": (self.motion_model.update_speed, [self.speed_increment, self.speed_increment]),
+            "g": (self.motion_model.update_speed, [-self.speed_increment, -self.speed_increment]),
+        }
 
 
-    #TODO: when moving the object by rotation, we should delete the old GUI Canvas and create a new one with update coordinates
-    #TODO: This is because Tkinter only allows for moving up,down,left,right, but no rotations. So we should always delete and redo
-    # Should be for each moving function below:
+    def get_circle_coordinates(self):
+        return self.circleObject.get_ui_coordinates()
+    def get_line_coordinates(self):
+        return self.lineObject.get_ui_coordinates()
 
-    # From KeyTracker, Move the agent in a certain direction
-    def move_up(self):
-        # Update internal representation of circleObject (being the physical robot)
-        self.circleObject.translate_coordinates(Point(0,-5))
-        # Update its Vision Vector
-        self.lineObject.translate_coordinates(Point(0,-5))
-        # Then update on the interface
-        # todo: this is where we should replace the lines below by creating new GUI shapes and also our self.circle and self.vision
-        self.Canvas.move(self.circle, 0, -5)
-        self.Canvas.move(self.vision, 0, -5)
 
-    def move_down(self):
-        # Update internal representation of circleObject (being the physical robot)
-        self.circleObject.translate_coordinates(Point(0, 5))
-        # Update its Vision Vector
-        self.lineObject.translate_coordinates(Point(0, 5))
-        # Then update on the interface
-        self.Canvas.move(self.circle, 0, 5)
-        self.Canvas.move(self.vision, 0, 5)
 
-    def move_left(self):
-        # Update internal representation of circleObject (being the physical robot)
-        self.circleObject.translate_coordinates(Point(-5, 0))
-        # Update its Vision Vector
-        self.lineObject.translate_coordinates(Point(-5, 0))
-        # Then update on the interface
-        self.Canvas.move(self.circle, -5, 0)
-        self.Canvas.move(self.vision, -5, 0)
+    def update(self):
+        # update the agent motion and update its coordinates
+        (new_position, new_theta) = self.motion_model.update_position()
+        self.position = new_position
 
-    def move_right(self):
-        # Update internal representation of circleObject (being the physical robot)
-        self.circleObject.translate_coordinates(Point(5, 0))
-        # Update its Vision Vector
-        self.lineObject.translate_coordinates(Point(5, 0))
-        # Then update on the interface
-        self.Canvas.move(self.circle, 5, 0)
-        self.Canvas.move(self.vision, 5, 5)
+        self.circleObject.update_coordinates(self.position)
+
+        #if new_theta != self.theta:
+        # Update the line
+
+
+
+
+        self.theta = new_theta
+
+
+
+    def on_key_press(self, key):
+        # React to the key press
+        try:
+            action, args = self.agent_actions[key]
+            action(*args)
+        except Exception:
+            # ignore it
+            pass
+
