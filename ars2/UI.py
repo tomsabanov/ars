@@ -8,7 +8,7 @@ from utils.vector import Vector, Point
 from utils.agent import Agent
 
 class Settings:
-    def __init__(self, w=600, h=600, delay=50, margin=10):
+    def __init__(self, w=800, h=800, delay=10, margin=0):
         self.BOARD_WIDTH = w
         self.BOARD_HEIGHT = h
         self.DELAY = delay
@@ -31,10 +31,10 @@ class UI(Canvas):
         # TODO: Map should be a hollow polygon, it should also be read from a file
         #       and scaled appropriately to the dimensions of the UI
         self.map = [
-            Object(Point(0,0), [Vector(Point(0,0),Point(600,0))], type="line"),
-            Object(Point(600,0), [Vector(Point(0, 0), Point(0, 600))], type="line"),
-            Object(Point(0, 600), [Vector(Point(0, 0), Point(600, 0))], type="line"),
-            Object(Point(0, 0), [Vector(Point(0, 0), Point(0, 600))], type="line"),
+            Object(Point(100,100), [Vector(Point(0,0),Point(500,0))], type="line"),
+            Object(Point(600,100), [Vector(Point(0, 0), Point(0, 500))], type="line"),
+            Object(Point(100, 600), [Vector(Point(0, 0), Point(500, 0))], type="line"),
+            Object(Point(100, 100), [Vector(Point(0, 0), Point(0, 500))], type="line"),
         ]
         for l in self.map:
             c_coords = l.get_ui_coordinates()
