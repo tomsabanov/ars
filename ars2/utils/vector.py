@@ -1,6 +1,9 @@
 
 
 # Point class that is a 2D point with X and Y
+import math
+
+
 class Point():
     def __init__(self, X, Y):
         self.X = X
@@ -10,6 +13,10 @@ class Point():
     def translate(self, direction):
         self.X = self.X + direction.X
         self.Y = self.Y + direction.Y
+
+    # Euclidean distance between two points
+    def euclidean_distance(self, point):
+        return math.sqrt((self.X-point.X)**2 + (self.Y-point.Y)**2)
 
     def print(self):
         print("P(" + str(self.X) + "," + str(self.Y) + ")")

@@ -1,4 +1,4 @@
-
+import math
 import sys
 from tkinter import *
 
@@ -18,7 +18,7 @@ class UI(Canvas):
 
     def __init__(self, sett: Settings):
         super().__init__(width=sett.BOARD_WIDTH+sett.MARGIN*2, height=sett.BOARD_HEIGHT + sett.MARGIN*2,
-            background="white", highlightthickness=0)
+            background="black", highlightthickness=0)
 
         self.settings = sett
         self.setup()
@@ -38,12 +38,11 @@ class UI(Canvas):
         ]
         for l in self.map:
             c_coords = l.get_ui_coordinates()
-            self.create_line(c_coords.P1.X+self.settings.MARGIN, 
+            self.create_line(c_coords.P1.X+self.settings.MARGIN,
                             c_coords.P1.Y+self.settings.MARGIN, 
                             c_coords.P2.X+self.settings.MARGIN, 
                             c_coords.P2.Y+self.settings.MARGIN, width=5)
 
-        
         self.setup_agent()
 
 

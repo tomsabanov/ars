@@ -46,6 +46,8 @@ class Object():
     def get_coordinates(self):
         return self.coordinates
 
+    def get_bounds(self):
+        return self.bounds
     # Update the center of the object coordinate
     # POV FP
     def translate_coordinates(self, point):

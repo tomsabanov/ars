@@ -105,7 +105,41 @@ class SensorModel():
         return (False,None, None)
 
 
+class CollistionDetection():
+    def __init__(self, position, radius, map):
+        self.position = position
+        self.radius = radius
+        self.map = map
 
+    def is_collision(self, wall):
+        point_1 = wall.get_bounds()[0].P1
+        point_2 = wall.get_bounds()[0].P2
+
+        center = [self.position.X, self.position.Y]
+
+        # Triangle formed by the line and the center of the circle
+        # wall=distance(P1, P2), side_1=distance(circle.center, Line.P1), side_2=distance(circle.center, Line.P2)
+        side_wall = point_1.euclidean_distance(point_2)
+        side_1 = self.position.euclidean_distance(point_1)
+        side_2 = self.position.euclidean_distance(point_2)
+
+        # Law of Cosines to find the cos of on of the angles opposite to the projection
+        # Can either take angle between the sides: side_wall & side_1, or side_wall & side_2
+        # If choose alpha = angle formed by side_wall & side_1
+        cos_alpha = (side_1**2 + side_wall**2 - side_2**2)/(2*side_1*side_wall)
+
+        # From the projection of the center of the circle, we have a right triangle where the projection is
+        # the distance between the center of the circle and the line
+        # Can use the SOH - sin = opp/hyp
+        # sin(alpha) = projection/side_1 <=> projection = sin(alpha)*side_1
+        # Which can be replaced by sqrt(1-cos(alpha)^2) from the Pythagorean theorem
+        sin_alpha = math.sqrt(1 - cos_alpha ** 2)
+        distance_circle_wall = sin_alpha*side_1
+        print("distance between circle and line=", distance_circle_wall-self.radius)
+        return distance_circle_wall - self.radius <= 0
+
+    def update(self, new_position):
+        self.position = new_position
 
 
 class Agent():
@@ -119,14 +153,13 @@ class Agent():
         self.motion_model = MotionModel(self.radius*2)
         self.sensor_model = SensorModel(self.position, self.theta, self.radius,
                                         self.map,6,100)
+        self.collision_detection = CollistionDetection(self.position, self.radius, self.map)
 
         # Radius Bound is a horizontal vector
         self.circleObject = Object(self.position, [Vector(Point(0,0), Point(self.radius, 0))], type="circle")
 
         # Create object line that will serve as vision. By default we put the cast to be twice the agent's radius
         self.lineObject = Object(self.position, [Vector(Point(0,0), Point(self.radius, 0))], type="line")
-
-
 
         self.speed_increment = 1
         self.agent_actions = {
@@ -166,8 +199,12 @@ class Agent():
 
         # Update the sensor model
         self.sensor_model.update(new_position, new_theta)
+        self.collision_detection.update(new_position)
+        # for wall in self.map:
+        #     # print()
+        for i in range(len(self.map)-1):
+            print('Collision with wall ', i, ': ', self.collision_detection.is_collision(self.map[i]))
 
-        
         self.theta = new_theta
         self.position = new_position
 
