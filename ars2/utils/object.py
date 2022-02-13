@@ -55,12 +55,26 @@ class Object():
     def update_coordinates(self,point):
         self.coordinates = point
 
+    def rotate_bounds(self, theta):
+        for b in self.bounds:
+            b.P1.X = b.P1.X * math.cos(theta)
+            b.P1.Y = b.P1.Y * math.sin(theta)
+
+            b.P2.X = b.P2.X * math.cos(theta)
+            b.P2.Y = b.P2.Y * math.sin(theta)
+
     # Function to rotate an object by an angle, having its center as pivot
     # POV FP
     def rotate(self, angle):
         new_bounds = []
         for bounds in self.bounds:
-            if self.type == "circle" or self.type == "line" or self.type == "rectangle":
+            if self.type == "line":
+                x1 = 0
+                y1 = 0
+                x2 = 50*math.cos(angle)
+                y2 = 50*math.sin(angle)
+                new_bounds.append(Vector(Point(x1,y1), Point(x2,y2)))
+            elif self.type == "circle" or self.type == "rectangle":
                 x1 = bounds.P1.X * math.cos(angle) - bounds.P1.Y * math.sin(angle)
                 y1 = bounds.P1.X * math.sin(angle) + bounds.P1.X * math.cos(angle)
                 x2 = bounds.P2.X * math.cos(angle) - bounds.P2.Y * math.sin(angle)

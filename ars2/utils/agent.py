@@ -1,88 +1,79 @@
 import math
 import numpy as np
 
+from utils.motion_model import MotionModel
 from utils.object import Object
 from utils.vector import Vector, Point
 
 
-class MotionModel():
-    def __init__(self, position, l):
-        
-        self.position = position # center point of the robot
+class SensorModel():
+    def __init__(self, position, theta, radius, map, num_sensors=12, max_vision=100):
+        self.position  = position
+        self.theta = theta
+        self.radius = radius
+        self.map = map
 
-        # Left and right motor speeds
-        self.vl = 0
-        self.vr = 0
+        self.num_sensors = num_sensors
+        self.max_vision = max_vision
 
-        self.l = l # distance between the wheels of the robot (we can use 2*radius)
+        self.sensors = []
+        self.init_sensors()
 
-        self.theta = 0 # angle
-        self.R = 0
-        self.omega = 0
+    def init_sensors(self):
+        angle = 360/self.num_sensors
+
+        i = math.radians(0)
+        while i < 360:
+            # Calculate the line for every angle and append it to sensors
+            P1 = Point(self.radius * math.cos(i), self.radius*math.sin(i))
+            P2 = Point(self.max_vision * math.cos(i), self.max_vision*math.sin(i))
+            l = Object(self.position, [Vector(P1, P2)], type="line")
+
+            self.sensors.append(l)
+            i = i + math.radians(angle)
+
+    def get_sensor_lines(self):
+        coords = []
+        for s in self.sensors:
+            coords.append(s.get_ui_coordinates())
+        return coords
     
-    def update_speed(self, vl, vr):
-        self.vl = self.vl + vl
-        self.vr = self.vr + vr
-    
-    def reset_speed(self):
-        self.vl = 0
-        self.vr = 0
 
-    def update_position(self):
-        print("Speed ")
-        print(self.vl)
-        print(self.vr)
-        # Calculate R, omega, ICC and new position
-        if self.vr == self.vl:
-            # We have forward linear motion, theta stays the same, 
-            # we only update the position
-            self.R = 0
-            self.omega = 0
+    def update(self, new_position, new_theta):
+        self.sensors = []
+        angle = 360/self.num_sensors
 
-            new_position = Point(self.position.X + self.vr * math.cos(self.theta),
-                                     self.position.Y + self.vr * math.sin(self.theta))
-            
-            self.position = new_position
+        #TODO: backwards motion -> theta should be negative
+        t = new_theta
 
-            return (self.position, self.theta)
+        # TODO: This could be done better - instead of creating a new line 
+        # we could just update the existing ones......
+        i = math.radians(0)
+        while i < 360:
+            # Calculate the line for every angle and append it to sensors
+            P1 = Point(self.radius * math.cos(i+t), self.radius*math.sin(i+t))
+            P2 = Point(self.max_vision * math.cos(i+t), self.max_vision*math.sin(i+t))
+            l = Object(new_position, [Vector(P1, P2)], type="line")
 
-        # We have a rotation
+            self.sensors.append(l)
+            i = i + math.radians(angle)
         
-        self.R = (self.l/2)*( (self.vr + self.vl)/(self.vr - self.vl) )
-        self.omega = (self.vr-self.vl)/self.l
-
-        self.ICCx = self.position.X - self.R * math.sin(self.theta)
-        self.ICCy = self.position.Y + self.R * math.cos(self.theta)
-
-        # Now let's calculate the new position of the agent
-        A1 = np.array([[math.cos(self.omega), -math.sin(self.omega), 0],
-                      [math.sin(self.omega), math.cos(self.omega), 0],
-                      [0,0,1]])
-        A2 = np.array([self.position.X - self.ICCx, 
-                        self.position.Y - self.ICCy,
-                        self.theta])
-        A3 = np.array([self.ICCx, self.ICCy, self.omega])
-
-        P = A1.dot(A2) + A3
-
-        new_position = Point(P[0],P[1])
-
         self.position = new_position
-        self.theta = P[2]
+        self.theta = new_theta
         
-        # We return the updated position and the theta angle
-        return (self.position, self.theta)
 
 
 class Agent():
-    def __init__(self, center, radius):
+    def __init__(self, center, radius, map):
         self.position = center
-        self.radius = radius
         self.theta = 0
+        self.radius = radius
 
-        self.speed_increment = 1
+        self.map = map
 
-        self.motion_model = MotionModel(self.position,self.radius*2)
+        self.motion_model = MotionModel(self.radius*2)
+        self.sensor_model = SensorModel(self.position, self.theta, self.radius,
+                                        self.map,12,100)
 
         # Radius Bound is a horizontal vector
         self.circleObject = Object(self.position, [Vector(Point(0,0), Point(self.radius, 0))], type="circle")
@@ -90,6 +81,9 @@ class Agent():
         # Create object line that will serve as vision. By default we put the cast to be twice the agent's radius
         self.lineObject = Object(self.position, [Vector(Point(0,0), Point(self.radius*2, 0))], type="line")
 
+
+
+        self.speed_increment = 10
         self.agent_actions = {
             "w": (self.motion_model.update_speed, [self.speed_increment, 0]),
             "s": (self.motion_model.update_speed, [-self.speed_increment, 0]),
@@ -105,23 +99,32 @@ class Agent():
         return self.circleObject.get_ui_coordinates()
     def get_line_coordinates(self):
         return self.lineObject.get_ui_coordinates()
+    def get_vision_lines(self):
+        return self.sensor_model.get_sensor_lines()
 
+
+
+    def update_agent_objects(self, new_position, new_theta):
+        # Update agent line
+        self.lineObject.update_coordinates(new_position)
+        if new_theta != self.theta:
+            self.lineObject.rotate(new_theta)
+
+        # Update agent circle 
+        self.circleObject.update_coordinates(new_position)
 
 
     def update(self):
-        # update the agent motion and update its coordinates
-        (new_position, new_theta) = self.motion_model.update_position()
-        self.position = new_position
+        # Update motion model
+        (new_position, new_theta) = self.motion_model.update_position(self.position, self.theta)
+        self.update_agent_objects(new_position, new_theta)
 
-        self.circleObject.update_coordinates(self.position)
+        # Update the sensor model
+        self.sensor_model.update(new_position, new_theta)
 
-        #if new_theta != self.theta:
-        # Update the line
-
-
-
-
+        
         self.theta = new_theta
+        self.position = new_position
 
 
 

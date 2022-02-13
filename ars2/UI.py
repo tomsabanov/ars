@@ -8,7 +8,7 @@ from utils.vector import Vector, Point
 from utils.agent import Agent
 
 class Settings:
-    def __init__(self, w=600, h=600, delay=10, margin=10):
+    def __init__(self, w=600, h=600, delay=50, margin=10):
         self.BOARD_WIDTH = w
         self.BOARD_HEIGHT = h
         self.DELAY = delay
@@ -58,20 +58,30 @@ class UI(Canvas):
                             int(self.settings.BOARD_WIDTH/2), 
                             int(self.settings.BOARD_HEIGHT/2)
                             ),
-                            radius=50 
+                            50,
+                            self.map
                     )
     
         c_coords = self.agent.get_circle_coordinates()
         self.agent_circle = self.create_oval(c_coords.P1.X, c_coords.P1.Y, c_coords.P2.X, c_coords.P2.Y, fill="red")
 
         l_coords = self.agent.get_line_coordinates()
-        self.agent_line = self.create_line(l_coords.P1.X, l_coords.P1.Y, l_coords.P2.X, l_coords.P2.Y, width=5)
+        self.agent_line = self.create_line(l_coords.P1.X, l_coords.P1.Y, l_coords.P2.X, l_coords.P2.Y, width=4,  fill='green')
 
+        vision_lines = self.agent.get_vision_lines()
+        self.agent_vision_lines = []
+        for l in vision_lines:
+            self.agent_vision_lines.append(
+                self.create_line(l.P1.X, l.P1.Y, l.P2.X, l.P2.Y, width=2)
+            )
 
 
     def delete_agent_ui(self):
         self.delete(self.agent_circle)
         self.delete(self.agent_line)
+
+        for v in self.agent_vision_lines:
+            self.delete(v)
 
     def update_agent_ui(self):
         self.delete_agent_ui()
@@ -80,7 +90,13 @@ class UI(Canvas):
         self.agent_circle = self.create_oval(c_coords.P1.X, c_coords.P1.Y, c_coords.P2.X, c_coords.P2.Y, fill="red")
 
         l_coords = self.agent.get_line_coordinates()
-        self.agent_line = self.create_line(l_coords.P1.X, l_coords.P1.Y, l_coords.P2.X, l_coords.P2.Y, width=5)
+        self.agent_line = self.create_line(l_coords.P1.X, l_coords.P1.Y, l_coords.P2.X, l_coords.P2.Y,  width=4,  fill='green')
+
+        vision_lines = self.agent.get_vision_lines()
+        for l in vision_lines:
+            self.agent_vision_lines.append(
+                self.create_line(l.P1.X, l.P1.Y, l.P2.X, l.P2.Y, width=2)
+            )
 
 
     def onKeyPressed(self, e):
@@ -98,10 +114,9 @@ class UI(Canvas):
         # We update the agent and then the agent 
         # canvas objects on each timer event and then redraw them
         self.agent.update()
-        
+
         self.update_agent_ui()
 
-        
         self.after(self.settings.DELAY, self.onTimer)
 
 
