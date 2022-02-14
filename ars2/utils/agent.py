@@ -7,11 +7,10 @@ from utils.sensor_model import SensorModel
 from utils.object import Object
 from utils.vector import Vector, Point
 
-class CollistionDetection():
-    def __init__(self, position, radius, map):
+class CollisionDetection():
+    def __init__(self, position, radius):
         self.position = position
         self.radius = radius
-        self.map = map
 
     # Returns the distance between the agent and the wall
     def get_distance(self, wall):
@@ -44,7 +43,6 @@ class CollistionDetection():
     def get_point_of_contact(self, wall):
         point_1 = wall.get_bounds()[0].P1
         point_2 = wall.get_bounds()[0].P2
-
         side_wall = point_1.euclidean_distance(point_2)
         side_1 = self.position.euclidean_distance(point_1)
         side_2 = self.position.euclidean_distance(point_2)
@@ -87,7 +85,7 @@ class Agent():
         self.motion_model = MotionModel(self.radius * 2)
         self.sensor_model = SensorModel(self.position, self.theta, self.radius,
                                         self.map,6,1000)
-        self.collision_detection = CollistionDetection(self.position, self.radius, self.map)
+        self.collision_detection = CollisionDetection(self.position, self.radius)
 
         # Radius Bound is a horizontal vector
         self.circleObject = Object(self.position, [Vector(Point(0, 0), Point(self.radius, 0))], type="circle")

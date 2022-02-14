@@ -1,7 +1,8 @@
 import math
 import numpy as np
 
-from utils.vector import Point
+from utils.vector import Point, Vector
+from utils.agent import CollisionDetection
 
 class MotionModel():
     def __init__(self, l):
@@ -66,7 +67,29 @@ class MotionModel():
         
         # We return the updated position and the theta angle
         return (new_position, new_theta, True)
-    
+
+    def sliding_agains(self, wall, position, theta, radius):
+        # Set the position on the point intersecting the wall
+        collision_model = CollisionDetection(position, radius)
+        point_of_contact = collision_model.get_point_of_contact(wall)
+
+        # Simulate next position as if there was no wall
+        new_position = Point(point_of_contact.X + self.vr * math.cos(theta),
+                             point_of_contact.Y + self.vr * math.sin(theta))
+
+        # Make the new "supposed" point, project it to the wall
+        # Project the trajectory of the agent if there were no wall on the wall vector
+        to_project = Vector(point_of_contact, new_position)
+
+        # Points of wall into vector
+        wall_1 = wall.get_bounds()[0].P1
+        wall_2 = wall.get_bounds()[0].P2
+        wall_vector = Vector(wall_1, wall_2)
+
+        # Projection formula
+        v_parallel = (np.dot(to_project, wall_vector)/np.dot(wall_vector, wall_vector))*wall_vector
+        return v_parallel
+
     def is_moving(self):
         if abs(self.vl) > 0 or abs(self.vr) > 0:
             return True
