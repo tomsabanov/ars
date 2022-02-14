@@ -8,7 +8,7 @@ from utils.vector import Vector, Point
 from utils.agent import Agent
 
 class Settings:
-    def __init__(self, w=800, h=800, delay=10, margin=0):
+    def __init__(self, w=800, h=800, delay=1, margin=0):
         self.BOARD_WIDTH = w
         self.BOARD_HEIGHT = h
         self.DELAY = delay
@@ -18,7 +18,7 @@ class UI(Canvas):
 
     def __init__(self, sett: Settings):
         super().__init__(width=sett.BOARD_WIDTH+sett.MARGIN*2, height=sett.BOARD_HEIGHT + sett.MARGIN*2,
-            background="black", highlightthickness=0)
+            background="white", highlightthickness=0)
 
         self.settings = sett
         self.setup()
@@ -67,13 +67,27 @@ class UI(Canvas):
         l_coords = self.agent.get_line_coordinates()
         self.agent_line = self.create_line(l_coords.P1.X, l_coords.P1.Y, l_coords.P2.X, l_coords.P2.Y, width=4,  fill='green')
 
-        vision_lines = self.agent.get_vision_lines()
+        (vision_lines, distances) = self.agent.get_vision_lines()
         self.agent_vision_lines = []
+        self.agent_distances = []
+        i = 0
         for l in vision_lines:
             self.agent_vision_lines.append(
                 self.create_line(l.P1.X, l.P1.Y, l.P2.X, l.P2.Y, width=2)
             )
+            self.agent_distances.append(
+                self.create_text(l.P1.X,l.P1.Y, text=str(distances[i]), fill="black", font=('Helvetica 12'))
+            )
+            i = i+1
 
+
+        (left_speed, right_speed) = self.agent.get_speeds()
+        tl = "Left motor speed: " + str(left_speed)
+        tr = "Right motor speed: " + str(right_speed)
+        self.agent_speed_left = self.create_text(700,700, text=tl, fill="black", font=('Helvetica 12'))
+        self.agent_speed_right = self.create_text(700,750, text=tr, fill="black", font=('Helvetica 12'))
+
+        
 
     def delete_agent_ui(self):
         self.delete(self.agent_circle)
@@ -81,8 +95,23 @@ class UI(Canvas):
 
         for v in self.agent_vision_lines:
             self.delete(v)
+        for d in self.agent_distances:
+            self.delete(d)
+    
+    def update_agent_speed_ui(self):
+        self.delete(self.agent_speed_left)
+        self.delete(self.agent_speed_right)        
+        (left_speed, right_speed) = self.agent.get_speeds()
+        tl = "Left motor speed: " + str(left_speed)
+        tr = "Right motor speed: " + str(right_speed)
+        self.agent_speed_left = self.create_text(620,30, text=tl, fill="black", font=('Helvetica 12'))
+        self.agent_speed_right = self.create_text(620,50, text=tr, fill="black", font=('Helvetica 12'))
 
     def update_agent_ui(self):
+        if self.agent.is_agent_moving() == False:
+            self.update_agent_speed_ui()
+            return 
+
         self.delete_agent_ui()
 
         c_coords = self.agent.get_circle_coordinates()
@@ -91,11 +120,20 @@ class UI(Canvas):
         l_coords = self.agent.get_line_coordinates()
         self.agent_line = self.create_line(l_coords.P1.X, l_coords.P1.Y, l_coords.P2.X, l_coords.P2.Y,  width=4,  fill='green')
 
-        vision_lines = self.agent.get_vision_lines()
+        (vision_lines, distances) = self.agent.get_vision_lines()
+        i = 0
         for l in vision_lines:
             self.agent_vision_lines.append(
                 self.create_line(l.P1.X, l.P1.Y, l.P2.X, l.P2.Y, width=2)
             )
+            self.agent_distances.append(
+                self.create_text(l.P1.X,l.P1.Y, text=str(distances[i]), fill="black", font=('Helvetica 12'))
+            )
+            i = i+1
+
+        self.update_agent_speed_ui()
+
+        
 
 
     def onKeyPressed(self, e):

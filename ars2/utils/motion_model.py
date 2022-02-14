@@ -13,7 +13,9 @@ class MotionModel():
 
         self.R = 0
         self.omega = 0
-
+    def get_speeds(self):
+        return (self.vl, self.vr)
+        
     def update_speed(self, vl, vr):
         self.vl = self.vl + vl
         self.vr = self.vr + vr
@@ -33,12 +35,15 @@ class MotionModel():
         self.omega = 0
 
     def update_position(self, position, theta):
+        if self.vr == 0 and self.vl == 0:
+            return (None, None, False)
+
         if self.vr == self.vl:
             # We have forward linear motion, theta stays the same, 
             # we only update the position
             new_position = Point(position.X + self.vr * math.cos(theta),
                                      position.Y + self.vr * math.sin(theta))
-            return (new_position, theta)
+            return (new_position, theta, True)
 
         # We have a rotation
 
@@ -60,4 +65,10 @@ class MotionModel():
         new_theta = P[2]
         
         # We return the updated position and the theta angle
-        return (new_position, new_theta)
+        return (new_position, new_theta, True)
+    
+    def is_moving(self):
+        if abs(self.vl) > 0 or abs(self.vr) > 0:
+            return True
+        
+        return False
