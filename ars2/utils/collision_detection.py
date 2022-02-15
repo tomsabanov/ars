@@ -76,3 +76,22 @@ class CollisionDetection():
         else:
             #print("Distance from object=", distance)
             return None
+
+    # https://stackoverflow.com/a/20677983
+    def glitch_through_wall(self, wall, v, theta):
+        new_position = Point(self.position.X + v * math.cos(theta),
+                             self.position.Y + v * math.sin(theta))
+        line_1 = (wall.get_bounds()[0].P1, wall.get_bounds()[0].P2)
+        line_2 = (self.position, new_position)
+        x_diff = (line_1[0].X - line_1[1].X, line_2[0].X - line_2[1].X)
+        y_diff = (line_1[0].Y - line_1[1].Y, line_2[0].Y - line_2[1].Y)
+
+        div = self.det(x_diff, y_diff)
+        if div == 0:
+            return False
+        else:
+            return True
+
+    # Check if the wall is between the current position and the possible next position
+    def det(self, a, b):
+        return a[0] * b[1] - a[1] * b[0]
