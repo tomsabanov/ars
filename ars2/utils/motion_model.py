@@ -83,7 +83,7 @@ class MotionModel():
             new_theta = P[2]
 
 
-        collisions = self.collision_detection.update(new_position, self.map)
+        collisions = self.collision_detection.update(new_position, self.map, (self.vr + self.vl)/2, new_theta)
 
         if len(collisions) > 0:
             if  self.is_colliding == False:

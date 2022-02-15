@@ -77,6 +77,7 @@ class Agent():
         # Update the sensor model
         self.sensor_model.update(new_position, new_theta)
 
+        
 
         self.theta = new_theta
         self.position = new_position

@@ -1,6 +1,7 @@
 import math
 from utils.vector import Vector, Point
 
+from shapely.geometry import LineString
 
 class CollisionDetection():
     def __init__(self, radius):
@@ -31,17 +32,24 @@ class CollisionDetection():
         distance_center_wall = sin_alpha * side_1
         return distance_center_wall - self.radius
 
-    def update(self, new_position, map):
+    def update(self, new_position, map, v, theta):
         self.position = new_position
 
         colls = []
 
         for i in range(len(map)):
             c = self.is_collision(map[i])
-            if c == None:
+            if c == None:                    
                 continue
             colls.append((c,map[i]))
-            #print('Collision with wall ', i, ': ')
+
+        if len(colls) == 0:
+            # check if we glitched through it
+
+            d = self.check_glitch(new_position, map, v, theta)
+            if d[0] == None:
+                return colls
+            colls.append(d)
 
         return colls
 
@@ -67,6 +75,76 @@ class CollisionDetection():
                                  (1 - ratio_distances) * point_1.Y + ratio_distances * point_2.Y)
         return point_of_contact
 
+
+    def distance_between_points(self,p1,p2):
+        dist = math.sqrt((p2.X - p1.X)**2 + (p2.Y - p1.Y)**2)
+        return dist
+
+    def check_glitch(self, p, map, v, theta):
+        box_l = map[0]
+        box_r = map[3]
+        box_t = map[1]
+        box_b = map[2]
+
+        c = None
+        w = None
+        if (p.X < 100 or p.X > 600 or p.Y > 600 or p.Y < 100):
+            # we need to find the point on the wall
+            # we must calculate the line of the agent moving
+            # and then find the intersections with the map
+            # and choose the closest one
+            # there we will move the agent
+
+            new_position = Point(p.X + v * math.cos(theta),
+                            p.Y + v * math.sin(theta))
+
+          
+            intersections = []
+            dist = 1000000
+            for m in map:
+                g = m.get_ui_coordinates()
+
+                (x,y) =  self.intersect(p,new_position, g.P1, g.P2)
+                p2 = Point(x,y)
+                d = self.distance_between_points(p, p2)
+                if d < dist:
+                    dist = d
+                    c = Point(x, y)
+                    w = m
+                
+                # check distance between (x,y) and agent
+            
+
+        if c is not None:
+            return (c,w)
+
+        return (None, None)
+
+
+    def intersect(self,a,b,c,d):
+        # stuff for line 1
+        a1 = b.Y-a.Y
+        b1 = a.X-b.X
+        c1 = a1*a.X + b1*a.Y
+
+        # stuff for line 2
+        a2 = d.Y-c.Y
+        b2 = c.X-d.X
+        c2 = a2*c.X + b2*c.Y
+
+        determinant = a1*b2 - a2*b1
+
+        if (determinant == 0):
+            # Return (infinity, infinity) if they never intersect
+            # By "never intersect", I mean that the lines are parallel to each other
+            return (math.inf, math.inf)
+        else:
+            x = (b2*c1 - b1*c2)/determinant
+            y = (a1*c2 - a2*c1)/determinant
+            return (x,y)
+
+
+
     def is_collision(self, wall):
         distance = self.get_distance(wall)
         if distance <= 0:
@@ -79,8 +157,8 @@ class CollisionDetection():
 
     # https://stackoverflow.com/a/20677983
     def glitch_through_wall(self, wall, v, theta):
-        new_position = Point(self.position.X + v * math.cos(theta),
-                             self.position.Y + v * math.sin(theta))
+        new_position = Point(self.position.X + math.cos(theta),
+                             self.position.Y + math.sin(theta))
         line_1 = (wall.get_bounds()[0].P1, wall.get_bounds()[0].P2)
         line_2 = (self.position, new_position)
         x_diff = (line_1[0].X - line_1[1].X, line_2[0].X - line_2[1].X)
@@ -88,9 +166,9 @@ class CollisionDetection():
 
         div = self.det(x_diff, y_diff)
         if div == 0:
-            return False
-        else:
             return True
+        else:
+            return False
 
     # Check if the wall is between the current position and the possible next position
     def det(self, a, b):
