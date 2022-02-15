@@ -7,6 +7,9 @@ from utils.object import Object
 from utils.vector import Vector, Point
 from utils.agent import Agent
 
+
+
+
 class Settings:
     def __init__(self, w=800, h=800, delay=1, margin=0):
         self.BOARD_WIDTH = w

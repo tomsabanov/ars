@@ -84,7 +84,6 @@ class MotionModel():
 
 
         collisions = self.collision_detection.update(new_position, self.map)
-        print("Number of collisions: " + str(len(collisions)))
 
         if len(collisions) > 0:
             if  self.is_colliding == False:
@@ -97,8 +96,6 @@ class MotionModel():
 
                 new_position = Point(col_point.X - self.dir* r*math.cos(new_theta), 
                                 col_point.Y - self.dir* r*math.sin(new_theta))
-                print("SNAPPING")
-                print(theta)
             else:
                 # calculate the new position differently
                 vec = self.sliding_agains(self.collisions[0], position, theta, self.l/2)
@@ -110,6 +107,8 @@ class MotionModel():
             self.is_colliding = False
             self.collisions = []
 
+
+        
 
 
         
