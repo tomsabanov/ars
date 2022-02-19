@@ -84,7 +84,6 @@ class MotionModel():
 
 
         collisions = self.collision_detection.update(new_position, self.map, (self.vr + self.vl)/2, new_theta)
-
         if len(collisions) > 0:
             if  self.is_colliding == False:
                 # snap the agent back
@@ -98,16 +97,21 @@ class MotionModel():
                                 col_point.Y - self.dir* r*math.sin(new_theta))
             else:
                 # calculate the new position differently
-                vec = self.sliding_agains(self.collisions[0], position, theta, self.l/2)
-                new_position = Point(position.X - vec[0], position.Y - vec[1])
-                
+                if len(collisions)>1:
+                    vectors_collisions = []
+                    for collision in collisions:
+                        vec = self.sliding_agains(collision, position, theta, self.l / 2)
+                        vectors_collisions.append(vec)
+                    v_new = np.dot(vectors_collisions[0], vectors_collisions[1])
+                    new_position = Point(position.X - v_new, position.Y - v_new)
+                else:
+                    vec = self.sliding_agains(collisions[0], position, theta, self.l/2)
+                    new_position = Point(position.X - vec[0], position.Y - vec[1])
                 if theta == 0:
                     new_position = position
         else:
             self.is_colliding = False
             self.collisions = []
-
-
         
 
 
