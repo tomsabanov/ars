@@ -53,6 +53,7 @@ class UI(Canvas):
         self.after(self.settings.DELAY, self.onTimer)
 
 
+
     def setup_agent(self):
         # Setup the agent and his canvas objects
 
@@ -90,7 +91,7 @@ class UI(Canvas):
         self.agent_speed_left = self.create_text(700,700, text=tl, fill="black", font=('Helvetica 12'))
         self.agent_speed_right = self.create_text(700,750, text=tr, fill="black", font=('Helvetica 12'))
 
-        
+        #self.agent.loop_agent(20)
 
     def delete_agent_ui(self):
         self.delete(self.agent_circle)
@@ -136,6 +137,8 @@ class UI(Canvas):
 
         self.update_agent_speed_ui()
 
+        #print(self.agent.sensor_model.get_sensor_distances())
+
         
 
 
@@ -160,7 +163,28 @@ class UI(Canvas):
         self.after(self.settings.DELAY, self.onTimer)
 
 
+# Todo: finish
+def train_agents():
+    generations = 1
+    population = 10
+    for i in range(generations):
+        results_generation = []
+        for j in range(population):
+            root = Tk()
+            settings = Settings()
+            ui = UI(settings)
+            ui.agent.loop_agent(20)
+
+            # Compute fitness function here
+            # To implement
+
+            # Get genome here to store in results_generation
+            genome = ui.agent.network
+
+
+
 def main():
+
     root = Tk()
 
     settings = Settings()
@@ -168,6 +192,9 @@ def main():
 
     root.mainloop()
 
+    #ui.agent.loop_agent()
+
 
 if __name__ == '__main__':
-    main()
+    #main()
+    train_agents()
