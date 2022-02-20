@@ -50,9 +50,6 @@ class Agent():
     def loop_agent(self, timesteps):
         output = self.motion_model.get_speeds()
         for i in range(timesteps):
-            #self.move_agent("w")
-            #self.move_agent("o")
-
             print("- Iteration " + str(i))
 
             input_layer = []
@@ -67,6 +64,7 @@ class Agent():
             output = self.ann.forward_propagation(input_layer)
             left_motor = output[0]
             right_motor = output[1]
+            print(output)
 
             # Move backward, forward, or nothing
             if left_motor < 0.5:
@@ -79,10 +77,13 @@ class Agent():
             else:
                 self.move_agent("w")
 
+            self.update()
+
 
             # Increment metrics for Fitness function here such as amount of dust sucked:
-            if len(self.motion_model.get_collisions()) == 0:
-                self.fitness += 1
+            if len(self.motion_model.get_collisions()) == 0: # and left_motor > 0 and right_motor > 0:
+                print("UPDATE FITNESS")
+                self.fitness = self.fitness + 1
 
 
 

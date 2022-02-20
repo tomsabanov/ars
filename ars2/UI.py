@@ -153,9 +153,9 @@ class UI():
 
 
 def train_agents():
-    generations = 100
+    generations = 5
     population = 20
-    best_fitness = 0
+    best_fitness = -1
     result_previous_generation = []
 
     # Creates initial population for starting:
@@ -167,10 +167,11 @@ def train_agents():
 
         # Compute fitness function here
         # To implement
-        if ui.agent.fitness > best_fitness or i == 0:
+        if ui.agent.fitness > best_fitness:
             # Get genome here to store in results_generation
             genome = ui.agent.network
             result_previous_generation.append(genome)
+            best_fitness = ui.agent.fitness
 
     for i in range(generations):
         results_generation = []
@@ -191,14 +192,14 @@ def train_agents():
 
             # Compute fitness function here
             # To implement
-            if ui.agent.fitness > best_fitness:
+            if ui.agent.fitness >= best_fitness:
                 # Get genome here to store in results_generation
                 genome = ui.agent.network
                 results_generation.append(genome)
+                best_fitness = ui.agent.fitness
 
         # Do selection for next iteration here:
         result_previous_generation = results_generation
-    print("best fitness: " + str(best_fitness))
 
 
     print("results:")
@@ -208,6 +209,9 @@ def train_agents():
 
     f = open("best_weights.txt", "w")
     f.write(str(result_previous_generation[0]))
+
+    print("best fitness: " + str(best_fitness))
+
 
 
 def main():
