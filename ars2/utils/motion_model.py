@@ -84,35 +84,50 @@ class MotionModel():
 
 
         collisions = self.collision_detection.update(new_position, self.map, (self.vr + self.vl)/2, new_theta)
-        if len(collisions) > 0:
+        
+        if len(collisions) == 1:
             if  self.is_colliding == False:
                 # snap the agent back
                 self.is_colliding = True
                 self.collisions = collisions
 
-                (col_point,wall) = collisions[0]
-                r = self.l/2
-
-                new_position = Point(col_point.X - self.dir* r*math.cos(new_theta), 
-                                col_point.Y - self.dir* r*math.sin(new_theta))
+                (col_point,distance,wall) = collisions[0]
+                d = abs(distance)
+            
+                new_x = new_position.X - self.dir*d*math.cos(new_theta)
+                new_y = new_position.Y - self.dir*d*math.sin(new_theta)
+                new_position = Point(new_x, new_y)
             else:
                 # calculate the new position differently
-                if len(collisions)>1:
-                    vectors_collisions = []
-                    for collision in collisions:
-                        vec = self.sliding_agains(collision, position, theta, self.l / 2)
-                        vectors_collisions.append(vec)
-                    v_new = np.dot(vectors_collisions[0], vectors_collisions[1])
-                    new_position = Point(position.X - v_new, position.Y - v_new)
-                else:
-                    vec = self.sliding_agains(collisions[0], position, theta, self.l/2)
-                    new_position = Point(position.X - vec[0], position.Y - vec[1])
-                if theta == 0:
-                    new_position = position
+                vec = self.sliding_agains(self.collisions[0], position, theta, self.l/2)
+                new_position = Point(position.X - vec[0], position.Y - vec[1])
+
+
+        elif len(collisions) > 1:
+            # Colliding with two walls
+            self.is_colliding = True
+            self.collisions = collisions
+
+            (col_point,distance,wall) = collisions[0]
+            (col_point,distance2,wall) = collisions[1]
+
+
+            # GET THE COMMON POINT OF THE CORNER AND GET ITS DISTANCE FROM AGENT 
+            # SET DISTANCE to FOUND DISTANCE + RADIUS
+            d = abs(distance)
+            d2 = abs(distance2)
+
+            if d2 > d:
+                d = d2
+            
+            new_x = new_position.X - self.dir*d*math.cos(new_theta)
+            new_y = new_position.Y - self.dir*d*math.sin(new_theta)
+            new_position = Point(new_x, new_y)
+
+
         else:
             self.is_colliding = False
             self.collisions = []
-        
 
 
         
@@ -122,7 +137,7 @@ class MotionModel():
     def sliding_agains(self, collision, position, theta, radius):
 
         point_of_contact = collision[0]
-        wall = collision[1]
+        wall = collision[2]
 
         v = (self.vr + self.vl)/2
 

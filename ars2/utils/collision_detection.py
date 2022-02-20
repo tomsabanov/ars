@@ -41,7 +41,7 @@ class CollisionDetection():
             c = self.is_collision(map[i])
             if c == None:                    
                 continue
-            colls.append((c,map[i]))
+            colls.append((c[0], c[1] ,map[i]))
 
         if len(colls) == 0:
             # check if we glitched through it
@@ -150,7 +150,7 @@ class CollisionDetection():
         if distance <= 0:
             point_of_contact = self.get_point_of_contact(wall)
             #print("Collision at point=[", point_of_contact.X, ", ", point_of_contact.Y, "]")
-            return point_of_contact
+            return (point_of_contact,distance)
         else:
             #print("Distance from object=", distance)
             return None

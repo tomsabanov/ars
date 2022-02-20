@@ -39,7 +39,7 @@ class Agent():
         }
 
     def get_circle_coordinates(self):
-        return self.circleObject.get_ui_coordinates()
+        return self.position
 
     def get_line_coordinates(self):
         return self.lineObject.get_ui_coordinates()
