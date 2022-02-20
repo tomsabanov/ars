@@ -65,6 +65,7 @@ class UI():
         ]
 
 
+
     def setup_agent(self):
         # Setup the agent and his canvas objects
         self.agent = Agent(Point(
@@ -145,10 +146,32 @@ class UI():
         textsurface = self.font.render(tr, False, (0, 0, 0))
         self.screen.blit(textsurface,(350,50))
 
-        
+
+
+'''
+def train_agents():
+    generations = 1
+    population = 10
+    for i in range(generations):
+        results_generation = []
+        for j in range(population):
+            root = Tk()
+            settings = Settings()
+            ui = UI(settings)
+            ui.agent.loop_agent(20)
+
+            # Compute fitness function here
+            # To implement
+
+            # Get genome here to store in results_generation
+            genome = ui.agent.network
+'''
+
+
 def main():
     settings = Settings()
     ui = UI(settings)
 
 if __name__ == '__main__':
     main()
+    #train_agents()

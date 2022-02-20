@@ -10,7 +10,7 @@ from shapely.geometry import LineString
 
 
 class SensorModel():
-    def __init__(self, position, theta, radius, map, num_sensors=6, max_vision=100):
+    def __init__(self, position, theta, radius, map, num_sensors=12, max_vision=100):
         self.position  = position
         self.theta = theta
         self.radius = radius
@@ -29,7 +29,7 @@ class SensorModel():
 
         j = 0
         i = math.radians(0)
-        while i < 360:
+        while i < math.pi * 2:
             # Calculate the line for every angle and append it to sensors
             P1 = Point(self.radius * math.cos(i), self.radius*math.sin(i))
             P2 = Point(self.max_vision * math.cos(i), self.max_vision*math.sin(i))
@@ -49,7 +49,23 @@ class SensorModel():
         for s in self.sensors:
             coords.append(s.get_ui_coordinates())
         return coords
+
+    # Ensures that the max length for sensors is not greater than the max vision
+    # TODO: delete this function once the distances are properly limited in their update method
+    # The function below is just a quick fix that should be removed for optimality
+    def limit_distance_max_vision(self):
+        vision = []
+        print('max vision: ' + str(self.max_vision))
+        for v in self.distances:
+            if v > self.max_vision:
+                print("bigger")
+                vision.append(self.max_vision)
+            else:
+                vision.append(v)
+        self.distances = vision
+
     def get_sensor_distances(self):
+        #self.limit_distance_max_vision()
         return self.distances
     
     def distance_between_points(self,p1,p2):
@@ -68,7 +84,7 @@ class SensorModel():
         # we could just update the existing ones......
         i = math.radians(0)
         j = 0
-        while i < 360:
+        while i < math.pi * 2:
             # Calculate the line for every angle and append it to sensors
             P1 = Point(self.radius * math.cos(i+t), self.radius*math.sin(i+t))
             P2 = Point((self.max_vision+self.radius) * math.cos(i+t), (self.max_vision+self.radius)*math.sin(i+t))
