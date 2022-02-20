@@ -16,6 +16,7 @@ class Agent():
         self.position = center
         self.theta = 0
         self.radius = radius
+        self.fitness = 0
 
         self.map = map
 
@@ -78,7 +79,11 @@ class Agent():
             else:
                 self.move_agent("w")
 
-            #print(self.network)
+
+            # Increment metrics for Fitness function here such as amount of dust sucked:
+            if len(self.motion_model.get_collisions()) == 0:
+                self.fitness += 1
+
 
 
 
@@ -98,6 +103,9 @@ class Agent():
             self.motion_model.update_speed(self.speed_increment, self.speed_increment)
         elif action == "g":
             self.motion_model.update_speed(-self.speed_increment, -self.speed_increment)
+
+    def set_network_weights(self, network):
+        self.network = self.ann.initialize_network(network)
 
     def get_circle_coordinates(self):
         return self.position

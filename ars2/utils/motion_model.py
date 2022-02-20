@@ -23,6 +23,8 @@ class MotionModel():
         self.is_colliding = False
         self.collisions = []
 
+    def get_collisions(self):
+        return self.collisions
 
     def get_speeds(self):
         return (self.vl, self.vr)
@@ -133,6 +135,7 @@ class MotionModel():
         
         # We return the updated position and the theta angle
         return (new_position, new_theta, True)
+
 
     def sliding_agains(self, collision, position, theta, radius):
 
