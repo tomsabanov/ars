@@ -43,10 +43,11 @@ class UI():
 
 
         self.setup()
-        while 1:
+
+
+    def show_UI(self):
+        while True:
             self.loop()
-
-
 
     def setup(self):
         # Setup the UI/agent
@@ -147,31 +148,77 @@ class UI():
         self.screen.blit(textsurface,(350,50))
 
 
+    def self_agent_weights(self, network):
+        self.agent.set_network_weights(network)
 
-'''
+
 def train_agents():
-    generations = 1
-    population = 10
+    generations = 5
+    population = 20
+    best_fitness = -1
+    result_previous_generation = []
+
+    # Creates initial population for starting:
+    for i in range(population):
+        settings = Settings()
+        ui = UI(settings)
+
+        ui.agent.loop_agent(1)
+
+        # Compute fitness function here
+        # To implement
+        if ui.agent.fitness > best_fitness:
+            # Get genome here to store in results_generation
+            genome = ui.agent.network
+            result_previous_generation.append(genome)
+            best_fitness = ui.agent.fitness
+
     for i in range(generations):
         results_generation = []
+
+
         for j in range(population):
-            root = Tk()
             settings = Settings()
             ui = UI(settings)
+
+            # Do creation of individuals here:
+
+            # Set previous weights:
+            ui.self_agent_weights(result_previous_generation[0])
+
+            ui.agent.ann.mutate_genes()
+
             ui.agent.loop_agent(20)
 
             # Compute fitness function here
             # To implement
+            if ui.agent.fitness >= best_fitness:
+                # Get genome here to store in results_generation
+                genome = ui.agent.network
+                results_generation.append(genome)
+                best_fitness = ui.agent.fitness
 
-            # Get genome here to store in results_generation
-            genome = ui.agent.network
-'''
+        # Do selection for next iteration here:
+        result_previous_generation = results_generation
+
+
+    print("results:")
+    for r in result_previous_generation:
+        print(r)
+
+
+    f = open("best_weights.txt", "w")
+    f.write(str(result_previous_generation[0]))
+
+    print("best fitness: " + str(best_fitness))
+
 
 
 def main():
     settings = Settings()
     ui = UI(settings)
+    ui.show_UI()
 
 if __name__ == '__main__':
-    main()
-    #train_agents()
+    #main()
+    train_agents()
