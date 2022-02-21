@@ -21,6 +21,7 @@ class MotionModel():
         self.collision_detection = CollisionDetection(self.l/2)
 
         self.is_colliding = False
+        self.is_colliding2 = False
         self.collisions = []
 
 
@@ -84,8 +85,9 @@ class MotionModel():
 
 
         collisions = self.collision_detection.update(new_position, self.map, (self.vr + self.vl)/2, new_theta)
-        
+        print("Number of collisions : " + str(len(collisions)))
         if len(collisions) == 1:
+            self.is_colliding2 = False
             if  self.is_colliding == False:
                 # snap the agent back
                 self.is_colliding = True
@@ -104,35 +106,82 @@ class MotionModel():
 
 
         elif len(collisions) > 1:
-            # Colliding with two walls
-            self.is_colliding = True
-            self.collisions = collisions
 
-            (col_point,distance,wall) = collisions[0]
-            (col_point,distance2,wall) = collisions[1]
+            if self.is_colliding2:
+                new_position = position
+                new_theta = theta
+            else:
+                # Colliding with two walls
+                self.is_colliding = True
+                self.is_colliding2 = True
+                self.collisions = collisions
+
+                (col_point1,distance,wall) = collisions[0]
+                (col_point2,distance2,wall2) = collisions[1]
 
 
-            # GET THE COMMON POINT OF THE CORNER AND GET ITS DISTANCE FROM AGENT 
-            # SET DISTANCE to FOUND DISTANCE + RADIUS
-            d = abs(distance)
-            d2 = abs(distance2)
+                # Calculate intersection between two circles around d1 and d2 with 
+                # the same radius as the agent
 
-            if d2 > d:
-                d = d2
-            
-            new_x = new_position.X - self.dir*d*math.cos(new_theta)
-            new_y = new_position.Y - self.dir*d*math.sin(new_theta)
-            new_position = Point(new_x, new_y)
+                (x3, y3, x4, y4) = self.get_intersections(
+                    col_point1.X, col_point1.Y, self.l/2,
+                    col_point2.X, col_point2.Y, self.l/2
+                )
+
+                a = np.array([new_position.X, new_position.Y])
+                p1 = np.array([x3, y3])
+                p2 = np.array([x4, y4])
+
+                d1 = np.linalg.norm(a-p1)
+                d2 = np.linalg.norm(a-p2)
+
+                if d2 < d1:
+                    p1 = p2
+
+                new_position = Point(p1[0], p1[1])
+                new_theta = theta
 
 
         else:
             self.is_colliding = False
+            self.is_colliding2 = False
             self.collisions = []
 
 
         
         # We return the updated position and the theta angle
         return (new_position, new_theta, True)
+
+
+    def get_intersections(self, x0, y0, r0, x1, y1, r1):
+        # circle 1: (x0, y0), radius r0
+        # circle 2: (x1, y1), radius r1
+
+        d=math.sqrt((x1-x0)**2 + (y1-y0)**2)
+        
+        # non intersecting
+        if d > r0 + r1 :
+            return None
+        # One circle within other
+        if d < abs(r0-r1):
+            return None
+        # coincident circles
+        if d == 0 and r0 == r1:
+            return None
+        else:
+            a=(r0**2-r1**2+d**2)/(2*d)
+            h=math.sqrt(r0**2-a**2)
+            x2=x0+a*(x1-x0)/d   
+            y2=y0+a*(y1-y0)/d   
+            x3=x2+h*(y1-y0)/d     
+            y3=y2-h*(x1-x0)/d 
+
+            x4=x2-h*(y1-y0)/d
+            y4=y2+h*(x1-x0)/d
+            
+            return (x3, y3, x4, y4)
+
+
 
     def sliding_agains(self, collision, position, theta, radius):
 
