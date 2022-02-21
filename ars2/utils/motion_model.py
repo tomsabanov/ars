@@ -24,6 +24,8 @@ class MotionModel():
         self.is_colliding2 = False
         self.collisions = []
 
+    def get_collisions(self):
+        return self.collisions
 
     def get_speeds(self):
         return (self.vl, self.vr)
@@ -85,7 +87,6 @@ class MotionModel():
 
 
         collisions = self.collision_detection.update(new_position, self.map, (self.vr + self.vl)/2, new_theta)
-        print("Number of collisions : " + str(len(collisions)))
         if len(collisions) == 1:
             self.is_colliding2 = False
             if  self.is_colliding == False:

@@ -1,4 +1,4 @@
-from random import uniform
+from random import uniform, random, randrange
 import numpy as np
 import copy
 
@@ -14,11 +14,35 @@ class Neural_Network():
         # one extra input is the bias node
         layer = [{'weights': [uniform(-1, 1) for i in range(inputs_l + 1)]} for i in range(output_l)]
         self.network.append(layer)
+        print('network :')
+        print(layer)
         return self.network
 
     def initialize_network(self, network):
         self.network = network
+        print("new network")
+        print(network)
         return self.network
+
+    def mutate_genes(self):
+        mutation_coef = 0.025   # By amount we can increment
+        mutation_rate = 0.2     # Percentage of weights updated
+        network = list()
+        for layer in self.network:
+            layer_list = []
+            for weight in layer:
+                weight_list = []
+
+                for n in weight['weights']:
+                    if randrange(0,100) / 100 <= mutation_rate:
+                        if randrange(0,1) == 0:
+                            weight_list.append(n - mutation_coef)
+                        else:
+                            weight_list.append(n + mutation_coef)
+
+                layer_list.append({'weights': weight_list})
+            network.append(layer)
+        self.network = network
 
     def sigmoid(self, activation):
         return 1.0 / (1.0 + np.exp(-activation))
@@ -44,7 +68,6 @@ class Neural_Network():
             activation_layer = []  # Get the input result of intermediate layer
             for neuron in layer:
                 activation_value = self.activate(np.array(neuron['weights']), inputs)
-                neuron['activation'] = activation_value
                 activation_layer.append(activation_value)
 
             inputs = activation_layer

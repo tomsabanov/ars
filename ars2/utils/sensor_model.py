@@ -112,7 +112,8 @@ class SensorModel():
         
         self.position = new_position
         self.theta = new_theta
-    
+
+
 
     def calculate_sensor_collision(self, sensor_line):
         # TODO: This algorithm is bad in terms of complexity -> O(n^2)

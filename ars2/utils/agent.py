@@ -16,6 +16,7 @@ class Agent():
         self.position = center
         self.theta = 0
         self.radius = radius
+        self.fitness = 0
 
         self.map = map
 
@@ -44,14 +45,14 @@ class Agent():
         self.ann = Neural_Network()
         self.network = self.ann.initialize_random_network(14,2) # By default do random network
 
+    def set_speed(self, vr, vl):
+        self.motion_model.update_speed(vr, vl)
+
     # This loop will be the agent's own controller
     # The ANN will be controlled from here
     def loop_agent(self, timesteps):
         output = self.motion_model.get_speeds()
         for i in range(timesteps):
-            #self.move_agent("w")
-            #self.move_agent("o")
-
             print("- Iteration " + str(i))
 
             input_layer = []
@@ -66,6 +67,7 @@ class Agent():
             output = self.ann.forward_propagation(input_layer)
             left_motor = output[0]
             right_motor = output[1]
+            print(output)
 
             # Move backward, forward, or nothing
             if left_motor < 0.5:
@@ -78,7 +80,14 @@ class Agent():
             else:
                 self.move_agent("w")
 
-            #print(self.network)
+            self.update()
+
+
+            # Increment metrics for Fitness function here such as amount of dust sucked:
+            if len(self.motion_model.get_collisions()) == 0: # and left_motor > 0 and right_motor > 0:
+                print("UPDATE FITNESS")
+                self.fitness = self.fitness + 1
+
 
 
 
@@ -98,6 +107,9 @@ class Agent():
             self.motion_model.update_speed(self.speed_increment, self.speed_increment)
         elif action == "g":
             self.motion_model.update_speed(-self.speed_increment, -self.speed_increment)
+
+    def set_network_weights(self, network):
+        self.network = self.ann.initialize_network(network)
 
     def get_circle_coordinates(self):
         return self.position
