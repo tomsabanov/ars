@@ -44,6 +44,9 @@ class Agent():
         self.ann = Neural_Network()
         self.network = self.ann.initialize_random_network(14,2) # By default do random network
 
+    def set_speed(self, vr, vl):
+        self.motion_model.update_speed(vr, vl)
+
     # This loop will be the agent's own controller
     # The ANN will be controlled from here
     def loop_agent(self, timesteps):

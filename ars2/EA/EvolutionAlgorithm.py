@@ -1,20 +1,26 @@
 import numpy as np
 
+
 class EvolutionAlgorithm:
 
-    def __init__(self, agent, population_size, bounds_left_wheel, bounds_right_wheel):
+    def __init__(self, max_fitness_val, population_size, bounds_left_wheel, bounds_right_wheel):
+        self.max_fitness_val = max_fitness_val
+        self.best_fitness = 0
         population_size = 100
-        l, r = initial_population(population_size, bounds_left_wheel, bounds_right_wheel)
-        self.generation[0] = l
-        self.generation[1] = r
-        self.fitness = []
+        self.current_generation = initial_population(population_size, bounds_left_wheel, bounds_right_wheel)
+        self.generations = [].append(current_generation)
+        self.generation_index = 0
 
 
     def initial_population(self, population_size, bounds_left_wheel, bounds_right_wheel):
         # Uniformly choose elements on a given interval on bounded phenotype
         vl = np.random.uniform(bounds_left_wheel[0], bounds_left_wheel[1], size=population_size)
         vr = np.random.uniform(bounds_right_wheel[0], bounds_right_wheel[1], size=population_size)
-        return vl, vr
+        individuals = []
+        for i in range(population_size):
+            individual = Individual(generation_index, vl[i], vr[i])
+            individuals.append(individual)
+        return individuals
 
     # Results come from how many collisions occurred and cleaned area
     def evaluation(self, results):
@@ -23,13 +29,12 @@ class EvolutionAlgorithm:
 
         return None
 
-
     def selection(self):
         # Probabilities for each agent's speeds
         fitness_sum = sum(self.fitness_values)
         likelihood_selection = []
         for value in fitness_values:
-            probability = value/fitness_sum
+            probability = value / fitness_sum
             likelihood_selection.append(probability)
         return likelihood_selection
 
@@ -54,7 +59,11 @@ class EvolutionAlgorithm:
         return child_1, child_2
 
     def mutation(self, individual):
-        # TODO: define p_m_char for the velocities
         # Randomly select the char to mutate
-        # Mutation with probability p_m_char
-        return None
+        mutation_index = random.randint(0, len(individual.genotype))
+        individual_genotype = individual.genotype
+
+        # Mutate genotype
+        individual_genotype[mutation_index] = np.random.uniform(bounds_left_wheel, bounds_right_wheel, size=1)
+        new_individual = Individual(individual.generation + 1, individual_genotype[0], individual_genotype[1])
+        return new_individual
