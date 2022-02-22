@@ -1,5 +1,6 @@
 import sys
 import pygame
+import json
 
 from pygame.locals import (
     K_UP,
@@ -24,10 +25,10 @@ class Settings:
 
 class UI():
 
-    def __init__(self, sett: Settings):
-        #super().__init__(width=sett.BOARD_WIDTH+sett.MARGIN*2, height=sett.BOARD_HEIGHT + sett.MARGIN*2,
-        #    background="white", highlightthickness=0)
+    def __init__(self, map_path, sett: Settings):
         self.sett = sett
+        self.map_path = map_path
+
         self.clock = pygame.time.Clock()
 
 
@@ -46,7 +47,7 @@ class UI():
 
 
     def show_UI(self):
-        while True:
+        while 1:
             self.loop()
 
     def setup(self):
@@ -58,6 +59,23 @@ class UI():
     def setup_map(self):
         # TODO: Map should be a hollow polygon, it should also be read from a file
         #       and scaled appropriately to the dimensions of the UI
+
+        # Read the map from map_path
+        f = open(self.map_path, "r")
+        map = f.read()
+        map = map.split("\n")
+        length_poly = len(map)-1
+
+        self.map = []
+        for i in range(length_poly):
+            poly = json.loads(map[i])
+
+            for coord in poly:
+                print(poly)
+                print("Length of polygon : " + str(len(poly)))
+
+
+
         self.map = [
             Object(Point(100,100), [Vector(Point(0,0),Point(500,0))], type="line"),
             Object(Point(600,100), [Vector(Point(0, 0), Point(0, 500))], type="line"),
@@ -122,8 +140,6 @@ class UI():
         p2 = (l_coords.P2.X, l_coords.P2.Y)
         pygame.draw.line(self.screen, [0, 0, 0], p1, p2)
 
-
-        
         # Draw sensor lines
         (vision_lines, distances) = self.agent.get_vision_lines()
         self.agent_vision_lines = []
@@ -216,7 +232,9 @@ def train_agents():
 
 def main():
     settings = Settings()
-    ui = UI(settings)
+
+    map_path = "./map/map_1"
+    ui = UI(map_path,settings)
     ui.show_UI()
 
 if __name__ == '__main__':
