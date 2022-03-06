@@ -22,9 +22,6 @@ class CollisionDetection():
         side_1 = self.position.euclidean_distance(point_1)
         side_2 = self.position.euclidean_distance(point_2)
 
-        print(side_1)
-        print(side_2)
-
         # Law of Cosines to find the cos of on of the angles opposite to the projection
         # Can either take angle between the sides: side_wall & side_1, or side_wall & side_2
         # If choose alpha = angle formed by side_wall & side_1
@@ -37,6 +34,9 @@ class CollisionDetection():
         # Which can be replaced by sqrt(1-cos(alpha)^2) from the Pythagorean theorem
         sin_alpha = math.sqrt(1 - cos_alpha ** 2)
         distance_center_wall = sin_alpha * side_1
+
+        
+
         return distance_center_wall - self.radius
 
     def update(self, new_position, map, v, theta):
@@ -157,13 +157,35 @@ class CollisionDetection():
             return (x,y)
 
 
+    def is_on_wall(self, wall, point):
+        c_coords = wall.get_ui_coordinates()
+        w1 = c_coords.P1
+        w2 = c_coords.P2
+
+        D = w1.euclidean_distance(w2)
+        a = point.euclidean_distance(w1)
+        b = point.euclidean_distance(w2)
+
+        eps = 0.000000001
+
+        if abs(a+b-D) <= eps:
+            return True
+
+        return False
+
+    def within(p, q, r):
+        "Return true iff q is between p and r (inclusive)."
+        return p <= q <= r or r <= q <= p
 
     def is_collision(self, wall):
         distance = self.get_distance(wall)
         if distance <= 0:
             point_of_contact = self.get_point_of_contact(wall)
-            #print("Collision at point=[", point_of_contact.X, ", ", point_of_contact.Y, "]")
-            return (point_of_contact,distance)
+
+            if self.is_on_wall(wall, point_of_contact):
+                #print("Collision at point=[", point_of_contact.X, ", ", point_of_contact.Y, "]")
+                return (point_of_contact,distance)
+            return None
         else:
             print("Distance from object=", distance)
             return None
