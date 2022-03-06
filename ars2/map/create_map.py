@@ -12,7 +12,7 @@ if len(sys.argv)<2:
 map_name = sys.argv[1]
 
 # Create image
-img = np.zeros((100, 100))
+img = np.zeros((1024, 1024))
 
 # Show the image
 fig = plt.figure()

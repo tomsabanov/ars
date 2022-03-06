@@ -1,6 +1,7 @@
 import sys
 import pygame
 import json
+from shapely.geometry import Polygon
 
 from pygame.locals import (
     K_UP,
@@ -18,12 +19,13 @@ from utils.agent import Agent
 
 
 class Settings:
-    def __init__(self, w=800, h=800, margin=0):
+    def __init__(self, w=1024, h=1024, margin=0, render=True):
         self.BOARD_WIDTH = w
         self.BOARD_HEIGHT = h
         self.MARGIN = margin
+        self.render = render
 
-class UI():
+class Simulation():
 
     def __init__(self, map_path, sett: Settings):
         self.sett = sett
@@ -46,7 +48,7 @@ class UI():
         self.setup()
 
 
-    def show_UI(self):
+    def simulate(self):
         while 1:
             self.loop()
 
@@ -57,32 +59,39 @@ class UI():
 
 
     def setup_map(self):
-        # TODO: Map should be a hollow polygon, it should also be read from a file
-        #       and scaled appropriately to the dimensions of the UI
-
         # Read the map from map_path
         f = open(self.map_path, "r")
         map = f.read()
         map = map.split("\n")
         length_poly = len(map)-1
 
+        # Map[0] should contain the exterior box of the map
+        j = json.loads(map[0])
+
+
+
         self.map = []
         for i in range(length_poly):
             poly = json.loads(map[i])
+            print(poly)
 
-            for coord in poly:
-                print(poly)
-                print("Length of polygon : " + str(len(poly)))
+            poly_len = len(poly) - 1
+            for i in range(poly_len):
+                c1 = poly[i]
+                c2 = poly[i+1]
+                self.map.append(
+                    Object(Point(c1[0], c1[1]), [
+                        Vector(Point(0,0), Point(c2[0]-c1[0], c2[1] - c1[1]))
+                    ], type="line")
+                )
 
-
-
-        self.map = [
-            Object(Point(100,100), [Vector(Point(0,0),Point(500,0))], type="line"),
-            Object(Point(600,100), [Vector(Point(0, 0), Point(0, 500))], type="line"),
-            Object(Point(100, 600), [Vector(Point(0, 0), Point(500, 0))], type="line"),
-            Object(Point(100, 100), [Vector(Point(0, 0), Point(0, 500))], type="line"),
-        ]
-
+            c1 = poly[0]
+            c2 = poly[len(poly)-1]
+            self.map.append(
+                Object(Point(c1[0], c1[1]), [
+                    Vector(Point(0,0), Point(c2[0]-c1[0], c2[1] - c1[1]))
+                ], type="line")
+            )
 
 
     def setup_agent(self):
@@ -126,7 +135,6 @@ class UI():
             p1 = (c_coords.P1.X, c_coords.P1.Y)
             p2 = (c_coords.P2.X, c_coords.P2.Y)
             pygame.draw.line(self.screen, [0, 0, 0], p1, p2)
-        
 
         # Draw the agent
         pos = self.agent.get_circle_coordinates()
@@ -168,75 +176,13 @@ class UI():
         self.agent.set_network_weights(network)
 
 
-def train_agents():
-    generations = 5
-    population = 20
-    best_fitness = -1
-    result_previous_generation = []
-
-    # Creates initial population for starting:
-    for i in range(population):
-        settings = Settings()
-        ui = UI(settings)
-
-        ui.agent.loop_agent(1)
-
-        # Compute fitness function here
-        # To implement
-        if ui.agent.fitness > best_fitness:
-            # Get genome here to store in results_generation
-            genome = ui.agent.network
-            result_previous_generation.append(genome)
-            best_fitness = ui.agent.fitness
-
-    for i in range(generations):
-        results_generation = []
-
-
-        for j in range(population):
-            settings = Settings()
-            ui = UI(settings)
-
-            # Do creation of individuals here:
-
-            # Set previous weights:
-            ui.self_agent_weights(result_previous_generation[0])
-
-            ui.agent.ann.mutate_genes()
-
-            ui.agent.loop_agent(20)
-
-            # Compute fitness function here
-            # To implement
-            if ui.agent.fitness >= best_fitness:
-                # Get genome here to store in results_generation
-                genome = ui.agent.network
-                results_generation.append(genome)
-                best_fitness = ui.agent.fitness
-
-        # Do selection for next iteration here:
-        result_previous_generation = results_generation
-
-
-    print("results:")
-    for r in result_previous_generation:
-        print(r)
-
-
-    f = open("best_weights.txt", "w")
-    f.write(str(result_previous_generation[0]))
-
-    print("best fitness: " + str(best_fitness))
-
-
 
 def main():
     settings = Settings()
 
-    map_path = "./map/map_1"
-    ui = UI(map_path,settings)
-    ui.show_UI()
+    map_path = "./map/map_2"
+    ui = Simulation(map_path,settings)
+    ui.simulate()
 
 if __name__ == '__main__':
     main()
-    #train_agents()

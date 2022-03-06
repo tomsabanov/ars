@@ -115,7 +115,6 @@ class Object():
 
 
 
-
 def test_rotation():
     bounds = [Vector(Point(0,0), Point(1,0))]
     test_obj = Object(Point(0,0), bounds, "line")

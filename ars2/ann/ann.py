@@ -14,8 +14,8 @@ class Neural_Network():
         # one extra input is the bias node
         layer = [{'weights': [uniform(-1, 1) for i in range(inputs_l + 1)]} for i in range(output_l)]
         self.network.append(layer)
-        print('network :')
-        print(layer)
+        #print('network :')
+        #print(layer)
         return self.network
 
     def initialize_network(self, network):

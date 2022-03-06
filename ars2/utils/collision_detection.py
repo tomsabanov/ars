@@ -9,14 +9,21 @@ class CollisionDetection():
 
     # Returns the distance between the agent and the wall
     def get_distance(self, wall):
-        point_1 = wall.get_bounds()[0].P1
-        point_2 = wall.get_bounds()[0].P2
+        #point_1 = wall.get_bounds()[0].P1
+        #point_2 = wall.get_bounds()[0].P2
+
+        c_coords = wall.get_ui_coordinates()
+        point_1 = c_coords.P1
+        point_2 = c_coords.P2
 
         # Triangle formed by the line and the center of the circle
         # wall=distance(P1, P2), side_1=distance(circle.center, Line.P1), side_2=distance(circle.center, Line.P2)
         side_wall = point_1.euclidean_distance(point_2)
         side_1 = self.position.euclidean_distance(point_1)
         side_2 = self.position.euclidean_distance(point_2)
+
+        print(side_1)
+        print(side_2)
 
         # Law of Cosines to find the cos of on of the angles opposite to the projection
         # Can either take angle between the sides: side_wall & side_1, or side_wall & side_2
@@ -43,13 +50,16 @@ class CollisionDetection():
                 continue
             colls.append((c[0], c[1] ,map[i]))
 
+
+
+        ''' Glitch checking - out of bounds
         if len(colls) == 0:
             # check if we glitched through it
-
             d = self.check_glitch(new_position, map, v, theta)
             if d[0] == None:
                 return colls
-            colls.append(d)
+            colls.append(d)        
+        '''
 
         return colls
 
@@ -88,6 +98,9 @@ class CollisionDetection():
 
         c = None
         w = None
+        dist = 1000000
+
+        '''
         if (p.X < 100 or p.X > 600 or p.Y > 600 or p.Y < 100):
             # we need to find the point on the wall
             # we must calculate the line of the agent moving
@@ -100,7 +113,6 @@ class CollisionDetection():
 
           
             intersections = []
-            dist = 1000000
             for m in map:
                 g = m.get_ui_coordinates()
 
@@ -113,12 +125,13 @@ class CollisionDetection():
                     w = m
                 
                 # check distance between (x,y) and agent
-            
+        '''
+
+
 
         if c is not None:
-            return (c,w)
-
-        return (None, None)
+            return (c, dist, w)
+        return (None, None, None)
 
 
     def intersect(self,a,b,c,d):
@@ -152,7 +165,7 @@ class CollisionDetection():
             #print("Collision at point=[", point_of_contact.X, ", ", point_of_contact.Y, "]")
             return (point_of_contact,distance)
         else:
-            #print("Distance from object=", distance)
+            print("Distance from object=", distance)
             return None
 
     # https://stackoverflow.com/a/20677983
