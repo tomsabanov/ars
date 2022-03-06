@@ -7,22 +7,27 @@ from utils.sensor_model import SensorModel
 from utils.object import Object
 from utils.vector import Vector, Point
 
+import sys
 from ann.ann import Neural_Network
 
 
 
 class Agent():
-    def __init__(self, center, radius, map):
-        self.position = center
+    def __init__(self, map = None, radius = None, start_pos_index = None):
+        if map == None or radius == None or start_pos_index == None:
+            print("SPECIFY MAP, RADIUS AND START_POS_INDEX FOR AGENT!")
+            sys.exit()
+
+        self.position = map["start_points"][start_pos_index]
         self.theta = 0
         self.radius = radius
         self.fitness = 0
 
         self.map = map
 
-        self.motion_model = MotionModel(self.radius * 2, self.map)
+        self.motion_model = MotionModel(self.radius * 2, self.map["map"])
         self.sensor_model = SensorModel(self.position, self.theta, self.radius,
-                                        self.map,12,100)
+                                        self.map["map"],12,100)
 
         # Radius Bound is a horizontal vector
         self.circleObject = Object(self.position, [Vector(Point(0, 0), Point(self.radius, 0))], type="circle")
@@ -44,6 +49,13 @@ class Agent():
         # Create Neural Network with 14 input nodes (12 sensors + 2 timesteps) and 2 output nodes for the motors
         self.ann = Neural_Network()
         self.network = self.ann.initialize_random_network(14,2) # By default do random network
+
+    def get_map(self):
+        return self.map
+
+
+    def ann_controller_run(self):
+        self.set_speed(1,1)    
 
     def set_speed(self, vr, vl):
         self.motion_model.update_speed(vr, vl)
