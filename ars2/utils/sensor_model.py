@@ -77,7 +77,6 @@ class SensorModel():
         self.sensors = []
         angle = 360/self.num_sensors
 
-        #TODO: backwards motion -> theta should be negative probably -> needs experimentation
         t = new_theta
 
         # TODO: This could be done better - instead of creating a new line 
@@ -122,6 +121,10 @@ class SensorModel():
         sensor_coords = sensor_line.get_ui_coordinates()
         A = sensor_coords.P1
         B = sensor_coords.P2
+        
+        dist = None
+        wall = None
+        point = None
 
         for m in self.map:
             coords = m.get_ui_coordinates()
@@ -135,6 +138,23 @@ class SensorModel():
             if not I.is_empty:
                 c = I.coords[:]
                 new_point = Point(c[0][0], c[0][1])
-                return (True, new_point, m.get_ui_coordinates())
+
+                # Check if distance of new_point to this wall is smaller than previous one
+                d = new_point.euclidean_distance(A)
+                if dist == None:
+                    dist = d
+                    wall = m
+                    point = new_point
+                    continue
+
+                if d < dist:
+                    dist = d
+                    wall = m
+                    point = new_point
+                    # The reason why we can already return here is because
+                    # we only really need to check for neighbouring lines
+                
+        if dist is not None:
+            return (True, point, wall.get_ui_coordinates())
 
         return (False,None, None)

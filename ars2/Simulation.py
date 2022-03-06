@@ -180,7 +180,7 @@ class Simulation():
 def main():
     settings = Settings()
 
-    map_path = "./map/map_2"
+    map_path = "./map/map_3"
     ui = Simulation(map_path,settings)
     ui.simulate()
 

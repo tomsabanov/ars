@@ -166,7 +166,7 @@ class CollisionDetection():
         a = point.euclidean_distance(w1)
         b = point.euclidean_distance(w2)
 
-        eps = 0.000000001
+        eps = 0.0001
 
         if abs(a+b-D) <= eps:
             return True
@@ -187,7 +187,7 @@ class CollisionDetection():
                 return (point_of_contact,distance)
             return None
         else:
-            print("Distance from object=", distance)
+            #print("Distance from object=", distance)
             return None
 
     # https://stackoverflow.com/a/20677983
