@@ -45,9 +45,11 @@ class Simulation():
         self.counter = 0
 
         self.clock = pygame.time.Clock()
+
         pygame.init()
 
         if self.render:
+
             pygame.font.init()
             self.font = pygame.font.SysFont('Comic Sans MS', 30)
             self.textsurface = self.font.render('Some Text', False, (0, 0, 0))
@@ -70,6 +72,7 @@ class Simulation():
             while time.time() < t_end:
                 self.loop()
 
+        return self.agent
 
     def setup(self):
         # Setup the UI/agent
