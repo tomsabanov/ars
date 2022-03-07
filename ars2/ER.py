@@ -4,13 +4,11 @@ import json
 import random
 import numpy as np
 import multiprocessing as mp
-import time
 
-from utils.object import Object
-from utils.vector import Vector, Point
 from utils.agent import Agent
 from Simulation import Simulation
 from ann import Dense, Network
+from utils.map import read_map, get_maps
 
 class Individual:
     def __init__(self, generation, weights):
@@ -86,7 +84,8 @@ class ER:
                 self.maps, 
                 self.ann,
                 self.time,
-                self.time_step
+                self.time_step,
+                self.max_abs_speed
                 ), callback=collect_result)
 
         pool.close()
@@ -133,7 +132,8 @@ class ER:
             "population_size":self.population_size,
             "time_step":self.time_step,
             "run_time":self.time,
-            "weights":serialized_weights
+            "weights":serialized_weights,
+            "nn_structure":self.ann.get_structure()
         }
         with open(file, 'w') as outfile:
             json.dump(data, outfile, indent=4)
@@ -195,6 +195,8 @@ class ER:
                 mutation_index = random.randint(0, len(layer)-1)
 
                 wl = layer[mutation_index]
+                # Mutate all values or just a single one????????????????????
+                # Requires a bit of expirementation
                 for j in range(len(wl)):
                     r = random.uniform(0, 1)
                     wl[j] = r
@@ -218,7 +220,7 @@ class ER:
                 new_c = self.mutation(child)
                 new_gen.append(new_c)        
 
-        #self.current_generation = new_gen
+        self.current_generation = new_gen
 
     def run_er(self):
         for i in range(self.number_of_generations):
@@ -242,13 +244,13 @@ def collect_result(result):
     global results
     results.append(result)
 
-def simulate(i, individual, maps, ann, time, time_step):
+def simulate(i, individual, maps, ann, time, time_step, max_speed):
     # Create new ann with same layers as before, but we will set new weights
     net = Network(ann.get_layers())
     net.set_weights(individual.weights)
     
     # We create an agent with the ann
-    agent = create_agent(maps, net)
+    agent = create_agent(maps, net, max_speed)
     
     # We run the simulation and receive back the updated agent
     agent = create_simulation(agent, time, time_step)
@@ -257,7 +259,7 @@ def simulate(i, individual, maps, ann, time, time_step):
 
     return individual
 
-def create_agent(maps,ann):
+def create_agent(maps,ann, max_speed):
     # Random map from the pool
     map_index = random.randint(0, len(maps)-1)
     map = maps[map_index]
@@ -280,7 +282,8 @@ def create_agent(maps,ann):
                     radius = rnd_radius,
                     start_pos_index = pos_index,
                     max_vision = rnd_vision,
-                    ann = ann
+                    ann = ann,
+                    max_speed = max_speed
                 )
     return agent
 
@@ -295,63 +298,6 @@ def create_simulation(agent, time, time_step):
     # simulate returns the agent object
     return sim.simulate()
 
-
-
-
-
-
-
-def read_map(map_path):
-    # Read the map from map_path
-    f = open(map_path, "r")
-    map = f.read()
-    map = map.split("\n")
-    map.pop()
-    length_poly = len(map)-1
-
-    # Map[0] should contain the exterior box of the map
-    j = json.loads(map[0])
-
-    MAP = {
-        "map":[],
-        "start_points":[]
-    }
-    for i in range(length_poly):
-        poly = json.loads(map[i])
-        poly_len = len(poly) - 1
-        for i in range(poly_len):
-            c1 = poly[i]
-            c2 = poly[i+1]
-            MAP["map"].append(
-                Object(Point(c1[0], c1[1]), [
-                    Vector(Point(0,0), Point(c2[0]-c1[0], c2[1] - c1[1]))
-                ], type="line")
-            )
-
-        c1 = poly[0]
-        c2 = poly[len(poly)-1]
-        MAP["map"].append(
-            Object(Point(c1[0], c1[1]), [
-                Vector(Point(0,0), Point(c2[0]-c1[0], c2[1] - c1[1]))
-            ], type="line")
-        )
-    
-    sp = json.loads(map[len(map) - 1])
-    for p in sp:
-        MAP["start_points"].append(
-            Point(p[0],p[1])
-        )
-    return MAP
-
-def get_maps(path):
-    print("Available maps:")
-    maps = list()
-    for map_path in os.listdir(path):
-        p = os.path.abspath(os.path.join(path, map_path))
-        print(p)
-        maps.append(read_map(p))
-    
-    return maps
 
 
 def main():
@@ -375,7 +321,7 @@ def main():
         maps = maps,
         ann = network,
         population_size = 8,
-        number_of_generations = 1,
+        number_of_generations = 2,
         time=2, # in s (this is the runtime of a single simulation of the agent)
         time_step=100, #in ms
         weights_dir = weights_dir

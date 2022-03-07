@@ -70,7 +70,6 @@ class Network:
             # Forward propagate
             output = layer.forward_propagate(output)
 
-        print(output)
         return output
 
 

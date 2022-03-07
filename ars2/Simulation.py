@@ -1,7 +1,8 @@
 import sys
 import pygame
-import json
 import time
+import json
+import numpy as np
 
 from pygame.locals import (
     K_UP,
@@ -13,10 +14,9 @@ from pygame.locals import (
     QUIT,
 )
 
-from utils.object import Object
-from utils.vector import Vector, Point
 from utils.agent import Agent
-
+from utils.map import read_map
+from ann import Dense, Network
 
 class Settings:
     def __init__(self, w=1024, h=1024, margin=0):
@@ -26,14 +26,14 @@ class Settings:
 
 class Simulation():
 
-    def __init__(self,  map = None, map_path = "./train_maps/map_1", 
+    def __init__(self,  map = None,
                         agent = None, 
                         time = None, 
                         render = True,
                         simulation=False,
-                        time_step = None
+                        time_step = 100,
+                        weights = None
                         ):
-        self.map_path = map_path
         self.map = map
         self.sett = Settings()
 
@@ -43,6 +43,8 @@ class Simulation():
         self.simulation = simulation
         self.time_step = time_step
         self.counter = 0
+
+        self.weights = weights
 
         self.clock = pygame.time.Clock()
 
@@ -78,56 +80,10 @@ class Simulation():
         # Setup the UI/agent
 
         if self.agent == None:
-            self.setup_map()
             self.setup_agent()
         else:
             self.map = self.agent.get_map()
 
-
-    def setup_map(self):
-        # Read the map from map_path
-        f = open(self.map_path, "r")
-        map = f.read()
-        map = map.split("\n")
-        map.pop()
-        length_poly = len(map)-1
-
-        # Map[0] should contain the exterior box of the map
-        j = json.loads(map[0])
-
-        # Last element in map should contain an array of possible starting points
-        # for the agents
-
-        self.map = {
-            "map" : [],
-            "start_points" : []
-        }
-        for i in range(length_poly):
-            poly = json.loads(map[i])
-
-            poly_len = len(poly) - 1
-            for i in range(poly_len):
-                c1 = poly[i]
-                c2 = poly[i+1]
-                self.map["map"].append(
-                    Object(Point(c1[0], c1[1]), [
-                        Vector(Point(0,0), Point(c2[0]-c1[0], c2[1] - c1[1]))
-                    ], type="line")
-                )
-
-            c1 = poly[0]
-            c2 = poly[len(poly)-1]
-            self.map["map"].append(
-                Object(Point(c1[0], c1[1]), [
-                    Vector(Point(0,0), Point(c2[0]-c1[0], c2[1] - c1[1]))
-                ], type="line")
-            )
-        
-        sp = json.loads(map[len(map) - 1])
-        for p in sp:
-            self.map["start_points"].append(
-                Point(p[0],p[1])
-            )
 
     def setup_agent(self):
         # Setup the agent and his canvas objects
@@ -157,6 +113,7 @@ class Simulation():
         # Update motor values from ANN
         # This has to be done every time step
         if self.counter == self.time_step:
+            print("Updating controller!")
             self.agent.ann_controller_run()
             self.counter = 0
 
@@ -223,7 +180,49 @@ class Simulation():
 
 def main():
     map_path = "./train_maps/map_3"
-    ui = Simulation(map_path = map_path)
+    map = read_map(map_path)
+
+    simulation = False
+    time_step = 100
+    agent = None
+    render = True
+    if len(sys.argv)>1:
+        weigth_file = sys.argv[1]
+        f = open(weigth_file, 'r')
+        js = json.load(f)
+
+        # Create the agent with the specified ann
+        net_struct = js['nn_structure']
+        weights = json.loads(js['weights'])
+
+        layers = []
+        W = []
+        for i in range(len(net_struct)):
+            s = net_struct[i]
+            layers.append(
+                Dense(s[1], s[0])
+            )
+            w = np.array(weights[i])
+            W.append(w)
+        # Create the network with the specified layers
+        ann = Network(layers)
+        ann.set_weights(W)
+
+        agent = Agent(
+                    map = map,
+                    start_pos_index = 0,
+                    max_vision = 500,
+                    ann = ann,
+                    max_speed = 3.0
+                )
+        simulation = True
+
+    ui = Simulation(map=map, 
+                    agent=agent, 
+                    simulation=simulation, 
+                    time_step=time_step,
+                    render=render
+                    )
     ui.simulate()
 
 if __name__ == '__main__':

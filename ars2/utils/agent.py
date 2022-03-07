@@ -12,7 +12,7 @@ import sys
 
 
 class Agent():
-    def __init__(self, map = None, radius = 50, start_pos_index = None, max_vision=100, ann = None):
+    def __init__(self, map = None, radius = 50, start_pos_index = None, max_vision=100, ann = None, max_speed = 3.0):
         if map == None or radius == None or start_pos_index == None:
             print("SPECIFY MAP, RADIUS AND START_POS_INDEX FOR AGENT!")
             sys.exit()
@@ -21,6 +21,7 @@ class Agent():
         self.theta = 0
         self.radius = radius
         self.max_vision = max_vision
+        self.max_speed = max_speed
 
         self.fitness = 0
 
@@ -56,7 +57,24 @@ class Agent():
 
 
     def ann_controller_run(self):
-        self.set_speed(1,1)    
+        # Get sensor distances 
+        sensor_distances = self.sensor_model.get_sensor_distances()
+
+        # Run the ann and get the output
+        (l, r) = self.ann.run_network(sensor_distances)
+        
+        # Above 0.5, speed is positive, under 0.5 speed is negative
+        c = 0.5
+
+        vl = (abs(l-c)/c)*self.max_speed
+        vr = (abs(r-c)/c)*self.max_speed
+
+        if l<c:
+            vl = -vl
+        if r<c:
+            vr = -vr
+
+        self.motion_model.set_speed(vl,vr)    
 
     def set_speed(self, vr, vl):
         self.motion_model.update_speed(vr, vl)
@@ -163,10 +181,11 @@ class Agent():
         # Update the sensor model
         self.sensor_model.update(new_position, new_theta)
 
-        
-
+    
         self.theta = new_theta
         self.position = new_position
+
+        print(self.position.X)
 
     def on_key_press(self, key):
         # React to the key press

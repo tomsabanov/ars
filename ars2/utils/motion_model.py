@@ -29,11 +29,19 @@ class MotionModel():
 
     def get_speeds(self):
         return (self.vl, self.vr)
-        
+    
+    def set_speed(self, vl, vr):
+        self.vl = vl
+        self.vr = vr
+        self.update_paramaters()
+
     def update_speed(self, vl, vr):
         self.vl = self.vl + vl
         self.vr = self.vr + vr
+        self.update_paramaters()
 
+    
+    def update_paramaters(self):
         if self.vl + self.vr > 0:
             self.dir = 1
         elif self.vl + self.vr < 0:
