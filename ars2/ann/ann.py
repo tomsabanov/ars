@@ -12,7 +12,9 @@ class Neural_Network():
     # Create network with two layers. Use o
     def initialize_random_network(self, inputs_l: int, output_l: int):
         # one extra input is the bias node
-        layer = [{'weights': [uniform(-1, 1) for i in range(inputs_l + 1)]} for i in range(output_l)]
+        layer = [{'weights': [uniform(-1, 1) for i in range(inputs_l + 1)]} for i in range(4)]
+        self.network.append(layer)
+        layer = [{'weights': [uniform(-1, 1) for i in range(4)]} for i in range(output_l)]
         self.network.append(layer)
         #print('network :')
         #print(layer)
@@ -64,11 +66,21 @@ class Neural_Network():
     # Forward propagate input to a network output
     def forward_propagation(self, inputs):
 
+        # Store feedback from the hidden layers
+        hidden_layer_values = []
+        added_hidden = 0 # Index label of intermediate hidden layer
+
         for layer in self.network:
             activation_layer = []  # Get the input result of intermediate layer
             for neuron in layer:
                 activation_value = self.activate(np.array(neuron['weights']), inputs)
                 activation_layer.append(activation_value)
+
+            # Assign hidden layer activation values
+            if added_hidden == 0:
+                self.hidden_layer_values = activation_layer
+                print("hidden layer: " + str(activation_layer))
+            added_hidden += 1
 
             inputs = activation_layer
 
