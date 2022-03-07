@@ -50,22 +50,7 @@ class SensorModel():
             coords.append(s.get_ui_coordinates())
         return coords
 
-    # Ensures that the max length for sensors is not greater than the max vision
-    # TODO: delete this function once the distances are properly limited in their update method
-    # The function below is just a quick fix that should be removed for optimality
-    def limit_distance_max_vision(self):
-        vision = []
-        print('max vision: ' + str(self.max_vision))
-        for v in self.distances:
-            if v > self.max_vision:
-                print("bigger")
-                vision.append(self.max_vision)
-            else:
-                vision.append(v)
-        self.distances = vision
-
     def get_sensor_distances(self):
-        #self.limit_distance_max_vision()
         return self.distances
     
     def distance_between_points(self,p1,p2):
@@ -102,7 +87,7 @@ class SensorModel():
                 dist_to_wall = round(self.distance_between_points(lc.P1, I),1)
                 self.distances[j] = dist_to_wall
             else:
-                self.distances[j] = -1
+                self.distances[j] = -1000
 
 
             self.sensors.append(l)

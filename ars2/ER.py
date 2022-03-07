@@ -6,7 +6,8 @@ import numpy as np
 import multiprocessing as mp
 import time
 import matplotlib.pyplot as plt
-import threading
+import copy
+
 
 from utils.agent import Agent
 from Simulation import Simulation
@@ -122,7 +123,7 @@ class ER:
         y = agent.y_coord 
         areax = np.trapz(y=y, x=x)
         areay = np.trapz(y=x, x=y)
-        A = ((areax+areay)/agent.radius)/1000
+        A = (areax+areay)/1000
 
         # Punishment collisions
         col = agent.num_of_collisions
@@ -238,11 +239,14 @@ class ER:
 
         new_gen = list()
         for i in range(0, self.population_size, 2):
-            p1 = parents[i]
-            p2 = parents[i + 1]
+            p1 = copy.deepcopy(parents[i])
+            p2 = copy.deepcopy(parents[i + 1])
+            
+            #print("Generation p1,p2 " + str(p1.generation) + "," + str(p2.generation))
             # Perform crossover and then mutation
             for child in self.cross_over(p1, p2):
                 new_c = self.mutation(child)
+                new_c.generation = child.generation + 1
                 new_gen.append(new_c)        
 
         self.current_generation = new_gen
@@ -254,6 +258,7 @@ class ER:
 
         best_fitness = []
         for i in range(self.number_of_generations):
+
             # Evaluate fitness of current generation
             self.evaluate_fitness()
 
@@ -268,6 +273,7 @@ class ER:
             # Reproduction includes selection + mutation
             self.reproduction()
             self.generation_index = self.generation_index + 1
+
 
 
             print("----------------")
@@ -356,9 +362,9 @@ def main():
     er = ER(
         maps = maps,
         ann = network,
-        population_size = 40,
-        number_of_generations = 10,
-        time=20, # in s (this is the runtime of a single simulation of the agent)
+        population_size = 80,
+        number_of_generations = 20,
+        time=15, # in s (this is the runtime of a single simulation of the agent)
         time_step=30, #in ms
         weights_dir = weights_dir
         )

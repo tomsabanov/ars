@@ -71,9 +71,24 @@ class Agent():
         # Get sensor distances 
         sensor_distances = self.sensor_model.get_sensor_distances()
 
+        # Adjust sensor_distances - shape the feedback
+        min_val = -100 # value where sensor doesn't detect anything
+        adjusted = []
+        A = 100
+        alpha = 0.5
+        tau = 0.2
+        for v in sensor_distances:
+            if v < 0:
+                adjusted.append(min_val)
+            else:
+                v = (v/self.max_vision) * 100
+                new_val = A + (A*alpha - A) * (1-np.exp(-v/tau))
+                adjusted.append(new_val)
+
         # Run the ann and get the output
-        (l, r) = self.ann.run_network(sensor_distances)
-        
+        (l, r) = self.ann.run_network(adjusted)
+        #print((l,r))
+
         # Above 0.5, speed is positive, under 0.5 speed is negative
         c = 0.5
 
