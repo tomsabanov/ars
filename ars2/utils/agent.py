@@ -50,7 +50,18 @@ class Agent():
         }
 
         self.ann = ann
+        
 
+        self.x_coord = []
+        self.y_coord = []
+
+        self.num_of_collisions = 0
+        self.num_agent_updates = 0
+
+
+
+    def get_coordinates(self):
+        return (self.x_coord, self.y_coord)
 
     def get_map(self):
         return self.map
@@ -79,49 +90,7 @@ class Agent():
     def set_speed(self, vr, vl):
         self.motion_model.update_speed(vr, vl)
 
-    # This loop will be the agent's own controller
-    # The ANN will be controlled from here
-    def loop_agent(self, timesteps):
-        output = self.motion_model.get_speeds()
-        for i in range(timesteps):
-            print("- Iteration " + str(i))
-
-            input_layer = []
-            for d in self.sensor_model.get_sensor_distances():
-                input_layer.append(d)
-            input_layer.append(output[0])
-            input_layer.append(output[1])
-
-            print(input_layer)
-
-
-            output = self.ann.forward_propagation(input_layer)
-            left_motor = output[0]
-            right_motor = output[1]
-            print(output)
-
-            # Move backward, forward, or nothing
-            if left_motor < 0.5:
-                self.move_agent("l")
-            else:
-                self.move_agent("o")
-
-            if right_motor < 0.5:
-                self.move_agent("s")
-            else:
-                self.move_agent("w")
-
-            self.update()
-
-
-            # Increment metrics for Fitness function here such as amount of dust sucked:
-            if len(self.motion_model.get_collisions()) == 0: # and left_motor > 0 and right_motor > 0:
-                print("UPDATE FITNESS")
-                self.fitness = self.fitness + 1
-
-
-
-
+    
     # Passes an action parameter to move the agent according to the output weights of the ANN
     def move_agent(self, action):
         if action == "w":
@@ -169,23 +138,31 @@ class Agent():
         self.circleObject.update_coordinates(new_position)
 
     def update(self):
+        self.num_agent_updates = self.num_agent_updates + 1
+
         # Update motion model
-        (new_position, new_theta, change) = self.motion_model.update(self.position, self.theta)
+        (new_position, new_theta, change, is_colliding) = self.motion_model.update(self.position, self.theta)
         
         # If there is no change in movement, then just skip the update
         if change == False:
             return
         self.update_agent_objects(new_position, new_theta)
 
-
         # Update the sensor model
         self.sensor_model.update(new_position, new_theta)
-
     
         self.theta = new_theta
         self.position = new_position
 
-        print(self.position.X)
+
+        self.x_coord.append(self.position.X)
+        self.y_coord.append(self.position.Y)
+
+
+        if is_colliding:
+            self.num_of_collisions = self.num_of_collisions + 1
+
+
 
     def on_key_press(self, key):
         # React to the key press

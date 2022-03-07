@@ -113,11 +113,32 @@ class Simulation():
         # Update motor values from ANN
         # This has to be done every time step
         if self.counter == self.time_step:
-            print("Updating controller!")
             self.agent.ann_controller_run()
             self.counter = 0
 
         self.agent.update()
+
+
+        # Calculate agent fitness:
+        ''' 
+        # Area calculation
+        x = self.agent.x_coord
+        y = self.agent.y_coord 
+        areax = np.trapz(y=y, x=x)
+        areay = np.trapz(y=x, x=y)
+        A = ((areax+areay)/self.agent.radius)/1000
+        print(A)        
+        '''
+
+        '''
+        # Punishment for collisions
+        col = self.agent.num_of_collisions
+        upd = self.agent.num_agent_updates      
+        P = col/upd
+        print(P)
+        '''
+
+
 
     def loop(self):            
         if self.simulation == False:

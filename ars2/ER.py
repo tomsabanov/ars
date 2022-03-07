@@ -4,11 +4,16 @@ import json
 import random
 import numpy as np
 import multiprocessing as mp
+import time
+import matplotlib.pyplot as plt
+import threading
 
 from utils.agent import Agent
 from Simulation import Simulation
 from ann import Dense, Network
 from utils.map import read_map, get_maps
+
+
 
 class Individual:
     def __init__(self, generation, weights):
@@ -75,6 +80,8 @@ class ER:
         # We parallelize the process so we can quickly evaluate the entire generation
         print("Number of CPU cores: " + str(mp.cpu_count()))
 
+        t = time.time()
+
         pool = mp.Pool(mp.cpu_count())
         # Step 3: Use loop to parallelize
         for i, individual in enumerate(self.current_generation):
@@ -91,6 +98,9 @@ class ER:
         pool.close()
         pool.join()
 
+        el = "Elapsed time: " + str(time.time() - t)
+        print(el)
+
         # Now we loop over the individual agents in results and calculate their fittness
         global results
         self.current_generation = list()
@@ -106,7 +116,21 @@ class ER:
 
     def calculate_fitness(self, agent):
         # Fitness function based on the data the agent has collected
-        return 1
+
+        # Area
+        x = agent.x_coord
+        y = agent.y_coord 
+        areax = np.trapz(y=y, x=x)
+        areay = np.trapz(y=x, x=y)
+        A = ((areax+areay)/agent.radius)/1000
+
+        # Punishment collisions
+        col = agent.num_of_collisions
+        upd = agent.num_agent_updates      
+        P = col/upd
+
+        F = A*(1-P)
+        return F
 
 
     def find_best(self):
@@ -137,6 +161,8 @@ class ER:
         }
         with open(file, 'w') as outfile:
             json.dump(data, outfile, indent=4)
+        
+        return best
 
 
     def tournament_selection(self):
@@ -203,7 +229,6 @@ class ER:
                 layer[mutation_index] = wl
 
         individual.weights = w
-        individual.generation = individual.generation + 1
         return individual
 
 
@@ -222,21 +247,32 @@ class ER:
 
         self.current_generation = new_gen
 
+
+
+
     def run_er(self):
+
+        best_fitness = []
         for i in range(self.number_of_generations):
             # Evaluate fitness of current generation
             self.evaluate_fitness()
 
             # Find best individual in the current generation 
             # and save its weights to disk
-            self.find_best()
-            
+            best = self.find_best()
+            best_fitness.append(best.fitness)
+
+            print("Best fitness: " + str(best.fitness))
+
+
             # Reproduction includes selection + mutation
             self.reproduction()
             self.generation_index = self.generation_index + 1
 
 
             print("----------------")
+
+
 
 
 
@@ -255,7 +291,7 @@ def simulate(i, individual, maps, ann, time, time_step, max_speed):
     # We run the simulation and receive back the updated agent
     agent = create_simulation(agent, time, time_step)
 
-    individual.agent
+    individual.agent = agent
 
     return individual
 
@@ -320,13 +356,14 @@ def main():
     er = ER(
         maps = maps,
         ann = network,
-        population_size = 8,
-        number_of_generations = 2,
-        time=2, # in s (this is the runtime of a single simulation of the agent)
-        time_step=100, #in ms
+        population_size = 40,
+        number_of_generations = 10,
+        time=20, # in s (this is the runtime of a single simulation of the agent)
+        time_step=30, #in ms
         weights_dir = weights_dir
         )
     er.run_er()
+
 
 if __name__ == '__main__':
     main()

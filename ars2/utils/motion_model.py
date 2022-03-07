@@ -65,7 +65,7 @@ class MotionModel():
 
     def update(self, position, theta):
         if self.vr == 0 and self.vl == 0:
-            return (None, None, False)
+            return (None, None, False, self.is_colliding)
         
         if self.vr == self.vl:
             # We have forward linear motion, theta stays the same, 
@@ -159,7 +159,7 @@ class MotionModel():
 
         
         # We return the updated position and the theta angle
-        return (new_position, new_theta, True)
+        return (new_position, new_theta, True, self.is_colliding)
 
 
     def get_intersections(self, x0, y0, r0, x1, y1, r1):
