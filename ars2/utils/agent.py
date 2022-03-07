@@ -43,7 +43,7 @@ class Agent():
 
         # Create Neural Network with 14 input nodes (12 sensors + 2 timesteps) and 2 output nodes for the motors
         self.ann = Neural_Network()
-        self.network = self.ann.initialize_random_network(14,2) # By default do random network
+        self.network = self.ann.initialize_random_network(16,2) # By default do random network
 
     def set_speed(self, vr, vl):
         self.motion_model.update_speed(vr, vl)
@@ -51,15 +51,22 @@ class Agent():
     # This loop will be the agent's own controller
     # The ANN will be controlled from here
     def loop_agent(self, timesteps):
-        output = self.motion_model.get_speeds()
+        #output = self.motion_model.get_speeds()
+
+        # This is the output of our hidden layer initialized to 0 for the first iteration
+        hidden_layer = [0,0,0,0]
+
         for i in range(timesteps):
             print("- Iteration " + str(i))
 
             input_layer = []
             for d in self.sensor_model.get_sensor_distances():
                 input_layer.append(d)
-            input_layer.append(output[0])
-            input_layer.append(output[1])
+            input_layer.append(hidden_layer[0])
+            input_layer.append(hidden_layer[1])
+            input_layer.append(hidden_layer[2])
+            input_layer.append(hidden_layer[3])
+
 
             print(input_layer)
 
@@ -68,6 +75,8 @@ class Agent():
             left_motor = output[0]
             right_motor = output[1]
             print(output)
+
+            hidden_layer = self.ann.hidden_layer_values
 
             # Move backward, forward, or nothing
             if left_motor < 0.5:
@@ -86,7 +95,7 @@ class Agent():
             # Increment metrics for Fitness function here such as amount of dust sucked:
             if len(self.motion_model.get_collisions()) == 0: # and left_motor > 0 and right_motor > 0:
                 print("UPDATE FITNESS")
-                self.fitness = self.fitness + 1
+                #self.fitness = self.fitness + 1
 
 
 
@@ -150,7 +159,7 @@ class Agent():
         # Update the sensor model
         self.sensor_model.update(new_position, new_theta)
 
-        
+        self.fitness += (abs(self.position.X - new_position.X) + abs(self.position.Y - new_position.Y))
 
         self.theta = new_theta
         self.position = new_position

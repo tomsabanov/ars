@@ -1,13 +1,18 @@
+from Simulation import Simulation, Settings
+
+
 def train_agents():
     generations = 5
     population = 20
     best_fitness = -1
     result_previous_generation = []
+    map_path = "./map/map_3"
+
 
     # Creates initial population for starting:
     for i in range(population):
         settings = Settings()
-        ui = UI(settings)
+        ui = Simulation(map_path, settings)
 
         ui.agent.loop_agent(1)
 
@@ -25,7 +30,7 @@ def train_agents():
 
         for j in range(population):
             settings = Settings()
-            ui = UI(settings)
+            ui = Simulation(map_path, settings)
 
             # Do creation of individuals here:
 
@@ -58,3 +63,5 @@ def train_agents():
 
     print("best fitness: " + str(best_fitness))
 
+if __name__ == '__main__':
+    train_agents()
