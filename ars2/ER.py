@@ -13,6 +13,7 @@ from utils.agent import Agent
 from Simulation import Simulation
 from ann import Dense, Network
 from utils.map import read_map, get_maps
+from utils.fnc import sigmoid
 
 
 
@@ -30,7 +31,7 @@ class ER:
                 maps = None,
                 population_size = 10,
                 cross_over_prob = 0.9,
-                mutation_prob = 0.05,
+                mutation_prob = 0.1,
                 number_of_generations = 10,
                 ann = None, # ANN that contains the structure of the NN
                 max_abs_speed = 3, # if max speed is 3, that means the robot is moving 300px/s
@@ -130,7 +131,25 @@ class ER:
         upd = agent.num_agent_updates      
         P = col/upd
 
-        F = A*(1-P)
+        # Penalty for colliding into a corner
+        corner_penalty = 1.0
+        if(agent.num_of_corner_collisions > 0):
+            corner_penalty = 0.0000001
+
+
+        # Punishment for amount of time being too close to the walls
+        close_penalty = (agent.close_to_wall/agent.counted_sensors)
+
+        # Reward for amount of time being a good distance from the walls
+        far_reward = (agent.far_from_wall/agent.counted_sensors)
+
+        # A medium-high sensor distance average is good, low is bad
+        avg_sensor_dist = (agent.avg_sensor_distance/agent.num_agent_updates)
+        if avg_sensor_dist < 0.5:
+            avg_sensor_dist = 0.01
+        avg_sensor_dist = (4 * avg_sensor_dist * (1-sigmoid(avg_sensor_dist)))
+
+        F = A*(1-P)*corner_penalty*avg_sensor_dist*far_reward*(1-close_penalty)
         return F
 
 
@@ -222,11 +241,14 @@ class ER:
                 mutation_index = random.randint(0, len(layer)-1)
 
                 wl = layer[mutation_index]
-                # Mutate all values or just a single one????????????????????
-                # Requires a bit of expirementation
-                for j in range(len(wl)):
+                rand_num = np.random.randint(0,len(wl)-1, random.randint(1,len(wl)))
+               
+                # Mutate random amount of values
+                # Requires a bit of expirementation...
+                for j in range(len(rand_num)):
                     r = random.uniform(0, 1)
-                    wl[j] = r
+                    wl[rand_num[j]] = r
+                
                 layer[mutation_index] = wl
 
         individual.weights = w
@@ -363,10 +385,12 @@ def main():
         maps = maps,
         ann = network,
         population_size = 80,
-        number_of_generations = 20,
+        number_of_generations = 100,
         time=15, # in s (this is the runtime of a single simulation of the agent)
         time_step=30, #in ms
-        weights_dir = weights_dir
+        weights_dir = weights_dir,
+        cross_over_prob = 0.9,
+        mutation_prob = 0.05
         )
     er.run_er()
 

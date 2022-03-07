@@ -138,6 +138,11 @@ class Simulation():
         print(P)
         '''
 
+        '''
+        avg_sensor_dist = self.agent.avg_sensor_distance/ self.agent.num_agent_updates
+        print(avg_sensor_dist)
+        '''
+
 
 
     def loop(self):            
@@ -200,7 +205,7 @@ class Simulation():
 
 
 def main():
-    map_path = "./train_maps/map_3"
+    map_path = "./train_maps/map_1"
     map = read_map(map_path)
 
     simulation = False
@@ -231,8 +236,8 @@ def main():
 
         agent = Agent(
                     map = map,
-                    start_pos_index = 0,
-                    max_vision = 500,
+                    start_pos_index = 2,
+                    max_vision = 300,
                     ann = ann,
                     max_speed = 3.0
                 )

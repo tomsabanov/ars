@@ -52,13 +52,20 @@ class Agent():
         self.ann = ann
         
 
+
+        # Data that is being collected in the simulation
         self.x_coord = []
         self.y_coord = []
 
         self.num_of_collisions = 0
+        self.num_of_corner_collisions = 0
         self.num_agent_updates = 0
 
+        self.avg_sensor_distance = 0
 
+        self.counted_sensors = 0
+        self.close_to_wall = 0 # amount of times we are too close to the walls
+        self.far_from_wall = 0 # amount of time we are a good distance from the walls
 
     def get_coordinates(self):
         return (self.x_coord, self.y_coord)
@@ -152,15 +159,57 @@ class Agent():
         # Update agent circle 
         self.circleObject.update_coordinates(new_position)
 
+
+    def update_agent_data(self, is_colliding, is_colliding_corner, position):
+        
+        self.x_coord.append(position.X)
+        self.y_coord.append(position.Y)
+
+        if is_colliding:
+            self.num_of_collisions = self.num_of_collisions + 1
+
+        if is_colliding_corner:
+            self.num_of_corner_collisions = self.num_of_corner_collisions + 1
+        
+        # Calculate sensor data
+        sensor_distances = self.sensor_model.get_sensor_distances()
+        i = 0
+        sum_distances = 0
+        good_distance = 0.5*self.radius
+        bad_distance = 0.2*self.radius
+
+        for d in sensor_distances:    
+            if d < 0:
+                continue
+            self.counted_sensors = self.counted_sensors + 1
+            if d >= good_distance:
+                self.far_from_wall = self.far_from_wall + 1
+            if d < bad_distance:
+                self.close_to_wall = self.close_to_wall + 1
+
+            v = (d/self.max_vision)
+            sum_distances = sum_distances + v
+            i = i + 1
+        
+        if i==0:
+            i = 1
+            
+        self.avg_sensor_distance = self.avg_sensor_distance + (sum_distances/i)
+
+
     def update(self):
         self.num_agent_updates = self.num_agent_updates + 1
 
         # Update motion model
-        (new_position, new_theta, change, is_colliding) = self.motion_model.update(self.position, self.theta)
+        (new_position, new_theta, change, is_colliding, is_colliding_corner) = self.motion_model.update(self.position, self.theta)
         
+
         # If there is no change in movement, then just skip the update
         if change == False:
+            self.update_agent_data(is_colliding, is_colliding_corner, self.position)
             return
+
+
         self.update_agent_objects(new_position, new_theta)
 
         # Update the sensor model
@@ -169,13 +218,8 @@ class Agent():
         self.theta = new_theta
         self.position = new_position
 
-
-        self.x_coord.append(self.position.X)
-        self.y_coord.append(self.position.Y)
-
-
-        if is_colliding:
-            self.num_of_collisions = self.num_of_collisions + 1
+    
+        self.update_agent_data(is_colliding, is_colliding_corner, self.position)
 
 
 
