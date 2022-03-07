@@ -6,13 +6,11 @@ def train_agents():
     population = 20
     best_fitness = -1
     result_previous_generation = []
-    map_path = "./map/map_3"
-
 
     # Creates initial population for starting:
     for i in range(population):
         settings = Settings()
-        ui = Simulation(map_path, settings)
+        ui = Simulation(settings)
 
         ui.agent.loop_agent(1)
 
@@ -25,17 +23,18 @@ def train_agents():
             best_fitness = ui.agent.fitness
 
     for i in range(generations):
-        results_generation = []
 
+        results_generation = []
 
         for j in range(population):
             settings = Settings()
-            ui = Simulation(map_path, settings)
+            ui = Simulation(settings)
 
             # Do creation of individuals here:
 
             # Set previous weights:
-            ui.self_agent_weights(result_previous_generation[0])
+            #ui.self_agent_weights(result_previous_generation[0])
+            ui.agent.network = result_previous_generation[0]
 
             ui.agent.ann.mutate_genes()
 
@@ -50,7 +49,8 @@ def train_agents():
                 best_fitness = ui.agent.fitness
 
         # Do selection for next iteration here:
-        result_previous_generation = results_generation
+        if len(results_generation) != 0:
+            result_previous_generation = results_generation
 
 
     print("results:")
