@@ -119,31 +119,6 @@ class Simulation():
         self.agent.update()
 
 
-        # Calculate agent fitness:
-        ''' 
-        # Area calculation
-        x = self.agent.x_coord
-        y = self.agent.y_coord 
-        areax = np.trapz(y=y, x=x)
-        areay = np.trapz(y=x, x=y)
-        A = ((areax+areay)/self.agent.radius)/1000
-        print(A)        
-        '''
-
-        '''
-        # Punishment for collisions
-        col = self.agent.num_of_collisions
-        upd = self.agent.num_agent_updates      
-        P = col/upd
-        print(P)
-        '''
-
-        '''
-        avg_sensor_dist = self.agent.avg_sensor_distance/ self.agent.num_agent_updates
-        print(avg_sensor_dist)
-        '''
-
-
 
     def loop(self):            
         if self.simulation == False:
@@ -205,8 +180,8 @@ class Simulation():
 
 
 def main():
-    map_path = "./train_maps/map_1"
-    map = read_map(map_path)
+    map_path = "./train_maps/map_4"
+    map = read_map(map_path,0)
 
     simulation = False
     time_step = 100
@@ -236,10 +211,10 @@ def main():
 
         agent = Agent(
                     map = map,
-                    start_pos_index = 2,
-                    max_vision = 300,
+                    start_pos_index = 0,
+                    max_vision = 500,
                     ann = ann,
-                    max_speed = 3.0
+                    max_speed = 2.0
                 )
         simulation = True
 

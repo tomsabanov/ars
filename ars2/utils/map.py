@@ -5,7 +5,7 @@ from utils.object import Object
 from utils.vector import Vector, Point
 
 
-def read_map(map_path):
+def read_map(map_path, index):
     # Read the map from map_path
     f = open(map_path, "r")
     map = f.read()
@@ -18,7 +18,8 @@ def read_map(map_path):
 
     MAP = {
         "map":[],
-        "start_points":[]
+        "start_points":[],
+        "index":index
     }
     for i in range(length_poly):
         poly = json.loads(map[i])
@@ -50,9 +51,11 @@ def read_map(map_path):
 def get_maps(path):
     print("Available maps:")
     maps = list()
+    i = 0
     for map_path in os.listdir(path):
         p = os.path.abspath(os.path.join(path, map_path))
         print(p)
-        maps.append(read_map(p))
+        maps.append(read_map(p, i))
+        i = i+1
     
     return maps

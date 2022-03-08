@@ -23,6 +23,7 @@ class Individual:
         self.weights = weights
         self.generation = generation
         self.agent = None # Agent has the ann
+        self.map_index = -1
 
 results = []
 
@@ -34,7 +35,7 @@ class ER:
                 mutation_prob = 0.1,
                 number_of_generations = 10,
                 ann = None, # ANN that contains the structure of the NN
-                max_abs_speed = 3, # if max speed is 3, that means the robot is moving 300px/s
+                max_abs_speed = 2, # if max speed is 2, that means the robot is moving 200px/s
                 time_step = 100, # in ms
                 time = 10, # in seconds
                 weights_dir="./weights"
@@ -56,6 +57,10 @@ class ER:
         self.best_in_generation= list() # best in each generation
         self.weights_dir = weights_dir
 
+        self.avg_fitness = []
+
+        self.avg_by_map = []
+
 
     def initialize_population(self):
         structure = self.ann.get_structure()
@@ -66,6 +71,12 @@ class ER:
             for j in range(len(structure)):
                 s = structure[j]
                 w = np.random.rand(s[0], s[1])
+
+                # go over each element in w and set it to some small number instead
+                for iw in range(len(w)):
+                    for jw in range(len(w[iw])):
+                        w[iw][jw] = random.uniform(-0.1,0.1)
+
                 weights.append(w)
             i = Individual(self.generation_index, weights)
             population.append(i)
@@ -116,44 +127,63 @@ class ER:
         results = []
 
 
+
     def calculate_fitness(self, agent):
         # Fitness function based on the data the agent has collected
 
         # Area
         x = agent.x_coord
+        max_x = max(x)
+        min_x = min(x)
         y = agent.y_coord 
+        max_y = max(y)
+        min_y = min(y)
+
+        diff_x = max_x - min_x
+        diff_y = max_y - min_y
+        diff = diff_x + diff_y
         areax = np.trapz(y=y, x=x)
         areay = np.trapz(y=x, x=y)
-        A = (areax+areay)/1000
+        A = (areax+areay)
 
         # Punishment collisions
         col = agent.num_of_collisions
         upd = agent.num_agent_updates      
         P = col/upd
+        if col>0:
+            P = 0.95
 
         # Penalty for colliding into a corner
         corner_penalty = 1.0
         if(agent.num_of_corner_collisions > 0):
-            corner_penalty = 0.0000001
+            corner_penalty = 0.00001
 
+        if agent.counted_sensors == 0:
+            agent.counted_sensors = 1
+
+        # Reward for large  min_distance
+        min_penalty = (agent.min_distance/agent.max_vision)
 
         # Punishment for amount of time being too close to the walls
-        close_penalty = (agent.close_to_wall/agent.counted_sensors)
+        close_penalty = (agent.close_to_wall/agent.counted_sensors)**2
 
         # Reward for amount of time being a good distance from the walls
-        far_reward = (agent.far_from_wall/agent.counted_sensors)
+        far_reward = (agent.far_from_wall/agent.counted_sensors)**2
 
         # A medium-high sensor distance average is good, low is bad
+        if(agent.num_agent_updates == 0):
+            agent.num_agent_updates = 1
         avg_sensor_dist = (agent.avg_sensor_distance/agent.num_agent_updates)
-        if avg_sensor_dist < 0.5:
-            avg_sensor_dist = 0.01
-        avg_sensor_dist = (4 * avg_sensor_dist * (1-sigmoid(avg_sensor_dist)))
 
-        F = A*(1-P)*corner_penalty*avg_sensor_dist*far_reward*(1-close_penalty)
+        F = 0.0001*A*(1-P)*corner_penalty*avg_sensor_dist*1000*far_reward*500*(1-close_penalty)*min_penalty
         return F
 
 
     def find_best(self):
+        for g in self.current_generation:
+            print(g.map_index)
+            g.fitness = g.fitness/self.avg_by_map[g.map_index]
+        
         self.current_generation.sort(key=lambda x: x.fitness, reverse=True)
 
         best = self.current_generation[0]
@@ -171,6 +201,8 @@ class ER:
         serialized_weights = json.dumps(serialized_weights)
 
         data = {
+            "best_fitness":best.fitness,
+            "avg_fitness":self.avg_fitness,
             "cross_over_prob":self.cross_over_prob,
             "mutation_prob":self.mutation_prob,
             "population_size":self.population_size,
@@ -185,9 +217,18 @@ class ER:
         return best
 
 
+    def roullete_wheel_selection(self):
+        max  = sum([c.fitness for c in self.current_generation])
+        pick = random.uniform(0, max)
+        current = 0
+        for g in self.current_generation:
+            current += g.fitness
+            if current > pick:
+                return g
+
     def tournament_selection(self):
         # First random selection
-        k = 3
+        k = 7
         selected = np.random.randint(len(self.current_generation))
         for i in np.random.randint(0, len(self.current_generation), k-1):
             if self.current_generation[i].fitness > self.current_generation[selected].fitness:
@@ -198,32 +239,35 @@ class ER:
     # ind_1 = Individual(weights1)
     # ind_2 = Individual(weights2)
     def cross_over(self, individual_1, individual_2):
+    
         child_1 = individual_1
         child_2 = individual_2
 
         w1 = child_1.weights
         w2 = child_2.weights
-        if random.uniform(0,1) < self.cross_over_prob:
-            # Go through each layer, select a cross-over point and cross-over the weights
+        if random.uniform(0,1) <= self.cross_over_prob:
+            # Select randomly a layer, select a cross-over point and cross-over the weights
             num_layers = len(w1)
-            for i in range(num_layers):
-                l1 = w1[i]
-                l2 = w2[i]
-                point = random.randint(1,len(l1)-1)
+            i = random.randint(0,num_layers-1)
 
-                # l1 gets left/right of point of l2
-                coin = random.randint(0,1)
-                if coin == 0:
-                    tmp = l1[:point].copy()
-                    l1[:point] = l2[:point]
-                    l2[:point] = tmp
-                else:
-                    tmp = l1[point:].copy()
-                    l1[point:] = l2[point:]
-                    l2[point:] = tmp
+            l1 = w1[i]
+            l2 = w2[i]
+            point = random.randint(1,len(l1)-1)
+
+            # l1 gets left/right of point of l2
+            coin = random.randint(0,1)
+            if coin == 0:
+                tmp = l1[:point].copy()
+                l1[:point] = l2[:point]
+                l2[:point] = tmp
+            else:
+                tmp = l1[point:].copy()
+                l1[point:] = l2[point:]
+                l2[point:] = tmp
                 
-                w1[i] = l1
-                w2[i] = l2
+            w1[i] = l1
+            w2[i] = l2
+
 
         child_1.weights = w1
         child_2.weights = w2
@@ -247,7 +291,14 @@ class ER:
                 # Requires a bit of expirementation...
                 for j in range(len(rand_num)):
                     r = random.uniform(0, 1)
-                    wl[rand_num[j]] = r
+                    c = random.randint(0,1)
+                    tmp = wl[rand_num[j]]
+                    if c == 0:
+                        tmp = tmp + tmp*r
+                    else:
+                        tmp = tmp - tmp*r
+
+                    wl[rand_num[j]] = tmp
                 
                 layer[mutation_index] = wl
 
@@ -257,7 +308,7 @@ class ER:
 
     def reproduction(self):
         # Perform selection
-        parents = [self.tournament_selection() for i in range(self.population_size)]
+        parents = [self.roullete_wheel_selection() for i in range(self.population_size)]
 
         new_gen = list()
         for i in range(0, self.population_size, 2):
@@ -286,19 +337,40 @@ class ER:
 
             # Find best individual in the current generation 
             # and save its weights to disk
+
+            self.avg_by_map = []
+
+            i = 0
+            for m in self.maps:
+                avg = 0
+                count = 0
+                for g in self.current_generation:
+                    if g.agent.map["index"] == i:
+                        avg = avg + g.fitness
+                        count = count + 1
+                avg = avg/count
+                if count == 0:
+                    avg = 1
+                self.avg_by_map.append(avg)
+
+                i = i+1
+
+            self.avg_fitness.append(avg)
+
+
             best = self.find_best()
             best_fitness.append(best.fitness)
 
             print("Best fitness: " + str(best.fitness))
+            print("Average fitness: " + str(avg))
 
 
             # Reproduction includes selection + mutation
             self.reproduction()
             self.generation_index = self.generation_index + 1
 
-
-
             print("----------------")
+
 
 
 
@@ -320,6 +392,7 @@ def simulate(i, individual, maps, ann, time, time_step, max_speed):
     agent = create_simulation(agent, time, time_step)
 
     individual.agent = agent
+    individual.map_index = agent.map["index"]
 
     return individual
 
@@ -332,13 +405,13 @@ def create_agent(maps,ann, max_speed):
     pos_index = random.randint(0, len(map["start_points"])-1)
 
     # Random radius in range [30,70]
-    radius_min = 30
-    radius_max = 70
+    radius_min = 20
+    radius_max = 50
     rnd_radius = random.uniform(radius_min, radius_max)
 
     # Random vision distance
     vision_min = 50
-    vision_max = 300
+    vision_max = 500
     rnd_vision = random.uniform(vision_min, vision_max) 
 
     agent = Agent(
@@ -384,13 +457,14 @@ def main():
     er = ER(
         maps = maps,
         ann = network,
-        population_size = 80,
+        population_size = 40,
         number_of_generations = 100,
-        time=15, # in s (this is the runtime of a single simulation of the agent)
-        time_step=30, #in ms
+        time=10, # in s (this is the runtime of a single simulation of the agent)
+        time_step=10, #in ms
         weights_dir = weights_dir,
         cross_over_prob = 0.9,
-        mutation_prob = 0.05
+        mutation_prob = 0.05,
+        max_abs_speed= 2.5
         )
     er.run_er()
 

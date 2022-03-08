@@ -2,14 +2,13 @@ import matplotlib.pyplot as plt
 import numpy as np
 
 
-def sigmoid(x):
-    sig = 1 / (1 + np.exp(-x))     # Define sigmoid function
-    return sig
+def sigmoid_function(x):
+    z = (1/(1 + np.exp(-x)))
+    return z
 
 
 # 100 linearly spaced numbers
-x = np.linspace(0,1,100)
-
+x = np.arange(0., 1., 0.2)
 
 A = 100
 alpha = 0.5
@@ -18,7 +17,7 @@ tau = 0.2
 Y = []
 for v in x:
     #val = A + (A*alpha - A) * (1-np.exp(-v/tau))
-    val =  4*v * (1-sigmoid(v))
+    val = v**2
     Y.append(val)
 
 

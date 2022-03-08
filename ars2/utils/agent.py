@@ -67,6 +67,8 @@ class Agent():
         self.close_to_wall = 0 # amount of times we are too close to the walls
         self.far_from_wall = 0 # amount of time we are a good distance from the walls
 
+        self.min_distance = 100000
+
     def get_coordinates(self):
         return (self.x_coord, self.y_coord)
 
@@ -79,18 +81,20 @@ class Agent():
         sensor_distances = self.sensor_model.get_sensor_distances()
 
         # Adjust sensor_distances - shape the feedback
-        min_val = -100 # value where sensor doesn't detect anything
+        min_val = self.max_vision*1000 # value where sensor doesn't detect anything
         adjusted = []
-        A = 100
+        A = 1000
         alpha = 0.5
         tau = 0.2
         for v in sensor_distances:
             if v < 0:
+                new_val = A + (A*alpha - A) * (1-np.exp(-min_val/tau))
                 adjusted.append(min_val)
             else:
-                v = (v/self.max_vision) * 100
+                v = (v/self.max_vision)
                 new_val = A + (A*alpha - A) * (1-np.exp(-v/tau))
                 adjusted.append(new_val)
+
 
         # Run the ann and get the output
         (l, r) = self.ann.run_network(adjusted)
@@ -175,12 +179,14 @@ class Agent():
         sensor_distances = self.sensor_model.get_sensor_distances()
         i = 0
         sum_distances = 0
-        good_distance = 0.5*self.radius
-        bad_distance = 0.2*self.radius
+        good_distance = 0.5*self.max_vision
+        bad_distance = 0.3*self.max_vision
 
         for d in sensor_distances:    
             if d < 0:
                 continue
+            if d < self.min_distance:
+                self.min_distance = d
             self.counted_sensors = self.counted_sensors + 1
             if d >= good_distance:
                 self.far_from_wall = self.far_from_wall + 1
