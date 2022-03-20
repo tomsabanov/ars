@@ -36,7 +36,8 @@ class Simulation():
                         radius=50,
                         localization = False,
                         time_tick = 100,
-                        time_s = 0.1
+                        time_s = 0.1,
+                        sensors = True,
                         ):
         self.map = map
         self.sett = Settings()
@@ -49,6 +50,8 @@ class Simulation():
         self.time_step = time_step # time step for the agent update
         self.counter = 0
         self.time_s = time_s
+
+        self.sensors = sensors
 
         # Vision/Speed/Radius properties of an agent
         self.max_vision = max_vision
@@ -165,6 +168,15 @@ class Simulation():
             p = p.tolist()
             p = (p[0][0], p[0][1])
             pygame.draw.circle(self.screen, [0,255,0], p, 4)
+        
+        # Draw visible features lines
+        vis_feat = self.agent.localization.get_visible_features()
+        pos = self.agent.get_circle_coordinates()
+        c = (pos.X, pos.Y)
+        for f in vis_feat:
+            p = (f.X, f.Y)
+            pygame.draw.line(self.screen, [0, 0, 255], p, c)
+
             
 
 
@@ -190,19 +202,20 @@ class Simulation():
         p2 = (l_coords.P2.X, l_coords.P2.Y)
         pygame.draw.line(self.screen, [0, 0, 0], p1, p2)
 
-        # Draw sensor lines
-        (vision_lines, distances) = self.agent.get_vision_lines()
-        self.agent_vision_lines = []
-        self.agent_distances = []
-        i = 0
-        for l in vision_lines:
-            p1 = (l.P1.X, l.P1.Y)
-            p2 = (l.P2.X, l.P2.Y)
-            pygame.draw.line(self.screen, [0, 0, 0], p1, p2)
+        if(self.sensors):
+            # Draw sensor lines
+            (vision_lines, distances) = self.agent.get_vision_lines()
+            self.agent_vision_lines = []
+            self.agent_distances = []
+            i = 0
+            for l in vision_lines:
+                p1 = (l.P1.X, l.P1.Y)
+                p2 = (l.P2.X, l.P2.Y)
+                pygame.draw.line(self.screen, [0, 0, 0], p1, p2)
 
-            textsurface = self.font.render(str(distances[i]), False, (0, 0, 0))
-            self.screen.blit(textsurface,p1)
-            i = i+1
+                textsurface = self.font.render(str(distances[i]), False, (0, 0, 0))
+                self.screen.blit(textsurface,p1)
+                i = i+1
 
              
         (left_speed, right_speed) = self.agent.get_speeds()
@@ -243,7 +256,10 @@ def main():
                         help='Speed increment of the agent.'),
     parser.add_argument('--localization', action=argparse.BooleanOptionalAction, 
                         default=False,
-                        help='Enable/Disable localization'),                        
+                        help='Enable/Disable localization'),
+    parser.add_argument('--sensors', action=argparse.BooleanOptionalAction, 
+                        default=True,
+                        help='Enable/Disable sensors'),                           
     args = parser.parse_args()
 
 
@@ -264,7 +280,8 @@ def main():
                     localization = args.localization,
                     time_step = time_step,
                     time_s = perc,
-                    speed_increment=args.speed_increment
+                    speed_increment=args.speed_increment,
+                    sensors = args.sensors
         )
 
 
@@ -279,7 +296,8 @@ def main():
                     time_step= time_step,
                     time = args.time,
                     time_s = perc,
-                    speed_increment = args.speed_increment
+                    speed_increment = args.speed_increment,
+                    sensors = args.sensors
                     )
     ui.simulate()
 

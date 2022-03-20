@@ -67,7 +67,11 @@ class Agent():
         self.localization_enabled = localization
         self.localization = None
         if self.localization_enabled:
-            self.localization = Localization(self.position, self.theta, 0, 0, self.time_s)
+            self.localization = Localization(self.position, self.theta, 
+                                            0, 0, self.time_s,
+                                            self.map["features"],
+                                            self.max_vision
+                                            )
 
 
 
@@ -206,13 +210,15 @@ class Agent():
     def update(self):
         self.num_agent_updates = self.num_agent_updates + 1
 
-        if(self.localization != None):
-            self.localization.update()
-
         # Update motion model
         (new_position, new_theta, change, is_colliding, is_colliding_corner) = self.motion_model.update(self.position, self.theta)
-        
 
+        if new_position == None:
+            new_position = self.position
+
+        if(self.localization != None):
+            self.localization.update(new_position, new_theta)
+        
         # If there is no change in movement, then just skip the update
         if change == False:
             self.update_agent_data(is_colliding, is_colliding_corner, self.position)
