@@ -180,7 +180,7 @@ class Simulation():
 
 
 def main():
-    map_path = "./train_maps/map_4"
+    map_path = "./train_maps/map_8"
     map = read_map(map_path,0)
 
     simulation = False
