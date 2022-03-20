@@ -10,12 +10,12 @@ class Localization():
 
         mu, sigma = 1, 0.1 # mean and standard deviation
         self.delta = np.random.normal(mu, sigma, 1)[0]
-        self.t = 1 #time_step # in ms
+        self.t = 1
 
         self.A = np.identity(3)
         self.u = np.array([v, w])
 
-
+        print(time_step)
 
         self.R_t = np.identity(3) * 0.001
 

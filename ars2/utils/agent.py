@@ -206,9 +206,9 @@ class Agent():
     def update(self):
         self.num_agent_updates = self.num_agent_updates + 1
 
-        if(self.localization != None and self.num_agent_updates!= 0 
-            and self.num_agent_updates%self.time_step == 0):
+        if(self.localization != None):
             self.localization.update()
+
         # Update motion model
         (new_position, new_theta, change, is_colliding, is_colliding_corner) = self.motion_model.update(self.position, self.theta)
         
