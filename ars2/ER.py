@@ -13,7 +13,6 @@ from utils.agent import Agent
 from Simulation import Simulation
 from ann import Dense, Network
 from utils.map import read_map, get_maps
-from utils.fnc import sigmoid
 
 
 
@@ -181,7 +180,8 @@ class ER:
 
     def find_best(self):
         for g in self.current_generation:
-            print(g.map_index)
+            if self.avg_by_map[g.map_index] == 0 or self.avg_by_map[g.map_index] == None:
+                self.avg_by_map[g.map_index] = 1
             g.fitness = g.fitness/self.avg_by_map[g.map_index]
         
         self.current_generation.sort(key=lambda x: x.fitness, reverse=True)

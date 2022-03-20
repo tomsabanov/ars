@@ -1,7 +1,7 @@
 import numpy as np
 import sys
 import math
-
+import json
 
 class Dense:
     def __init__(self, input, output):
@@ -74,3 +74,26 @@ class Network:
 
 
 
+
+def get_network(weights_path):
+    f = open(weights_path, 'r')
+    js = json.load(f)
+
+    # Create the agent with the specified ann
+    net_struct = js['nn_structure']
+    weights = json.loads(js['weights'])
+
+    layers = []
+    W = []
+    for i in range(len(net_struct)):
+        s = net_struct[i]
+        layers.append(
+            Dense(s[1], s[0])
+        )
+        w = np.array(weights[i])
+        W.append(w)
+    # Create the network with the specified layers
+    ann = Network(layers)
+    ann.set_weights(W)   
+
+    return ann

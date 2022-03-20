@@ -7,12 +7,16 @@ from utils.sensor_model import SensorModel
 from utils.object import Object
 from utils.vector import Vector, Point
 
+from Localization import Localization
+
 import sys
 
-
-
 class Agent():
-    def __init__(self, map = None, radius = 50, start_pos_index = None, max_vision=100, ann = None, max_speed = 3.0):
+    def __init__(self,  map = None, radius = 50, start_pos_index = None, 
+                        max_vision=100, ann = None, max_speed = 2.0,
+                        localization=False, time_step=100, time_s=0.1,
+                        speed_increment = 0.5
+                ):
         if map == None or radius == None or start_pos_index == None:
             print("SPECIFY MAP, RADIUS AND START_POS_INDEX FOR AGENT!")
             sys.exit()
@@ -28,7 +32,7 @@ class Agent():
 
         self.map = map
 
-        self.motion_model = MotionModel(self.radius * 2, self.map["map"])
+        self.motion_model = MotionModel(self.radius * 2, self.map["map"], self.max_speed)
         self.sensor_model = SensorModel(self.position, self.theta, self.radius,
                                         self.map["map"],12,self.max_vision)
 
@@ -38,7 +42,7 @@ class Agent():
         # Create object line that will serve as vision. By default we put the cast to be twice the agent's radius
         self.lineObject = Object(self.position, [Vector(Point(0, 0), Point(self.radius, 0))], type="line")
 
-        self.speed_increment = 1
+        self.speed_increment = speed_increment
         self.agent_actions = {
             "w": (self.motion_model.update_speed, [self.speed_increment, 0]),
             "s": (self.motion_model.update_speed, [-self.speed_increment, 0]),
@@ -48,9 +52,23 @@ class Agent():
             "t": (self.motion_model.update_speed, [self.speed_increment, self.speed_increment]),
             "g": (self.motion_model.update_speed, [-self.speed_increment, -self.speed_increment]),
         }
+        self.agent_localization_actions = {
+            "w": self.agent_actions["t"],
+            "s": self.agent_actions["g"],
+            "a": (self.motion_model.update_speed, [2*self.speed_increment, -self.speed_increment]),
+            "d": (self.motion_model.update_speed, [-self.speed_increment, 2*self.speed_increment]),
+            "x": self.agent_actions["x"]
+        }
 
         self.ann = ann
         
+        self.time_step = time_step
+        self.time_s = time_s
+        self.localization_enabled = localization
+        self.localization = None
+        if self.localization_enabled:
+            self.localization = Localization(self.position, self.theta, 0, 0, self.time_s)
+
 
 
         # Data that is being collected in the simulation
@@ -115,24 +133,6 @@ class Agent():
 
     def set_speed(self, vr, vl):
         self.motion_model.update_speed(vr, vl)
-
-    
-    # Passes an action parameter to move the agent according to the output weights of the ANN
-    def move_agent(self, action):
-        if action == "w":
-            self.motion_model.update_speed(self.speed_increment, 0)
-        elif action == "s":
-            self.motion_model.update_speed(-self.speed_increment, 0)
-        elif action == "o":
-            self.motion_model.update_speed(0, self.speed_increment)
-        elif action == "l":
-            self.motion_model.update_speed(0, -self.speed_increment)
-        elif action == "x":
-            self.motion_model.update_speed()
-        elif action == "t":
-            self.motion_model.update_speed(self.speed_increment, self.speed_increment)
-        elif action == "g":
-            self.motion_model.update_speed(-self.speed_increment, -self.speed_increment)
 
     def set_network_weights(self, network):
         self.network = self.ann.initialize_network(network)
@@ -206,6 +206,9 @@ class Agent():
     def update(self):
         self.num_agent_updates = self.num_agent_updates + 1
 
+        if(self.localization != None and self.num_agent_updates!= 0 
+            and self.num_agent_updates%self.time_step == 0):
+            self.localization.update()
         # Update motion model
         (new_position, new_theta, change, is_colliding, is_colliding_corner) = self.motion_model.update(self.position, self.theta)
         
@@ -232,8 +235,18 @@ class Agent():
     def on_key_press(self, key):
         # React to the key press
         try:
-            action, args = self.agent_actions[key]
+            if self.localization == None:
+                action, args = self.agent_actions[key]
+                action(*args)
+                return
+            action, args = self.agent_localization_actions[key]
             action(*args)
+
+            # Get speed and omega from motion model and pass them to localization
+            v = self.motion_model.get_speed()
+            w = self.motion_model.get_omega()
+            self.localization.update_speed(v,w)
+            
         except Exception:
             # ignore it
             pass

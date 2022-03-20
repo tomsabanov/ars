@@ -5,11 +5,13 @@ from utils.vector import Point, Vector
 from utils.collision_detection import CollisionDetection
 
 class MotionModel():
-    def __init__(self, l, map):
+    def __init__(self, l, map, max_speed):
         # Left and right motor speeds
         self.vl = 0
         self.vr = 0
         self.dir = 0
+
+        self.max_speed = max_speed
 
         self.l = l # distance between the wheels of the robot (we can use 2*radius)
 
@@ -33,15 +35,21 @@ class MotionModel():
     def set_speed(self, vl, vr):
         self.vl = vl
         self.vr = vr
+        self.update_dir()
         self.update_paramaters()
 
     def update_speed(self, vl, vr):
-        self.vl = self.vl + vl
-        self.vr = self.vr + vr
+        self.vl = round(self.vl + vl,3)
+        self.vr = round(self.vr + vr,3)
+        self.update_dir()
         self.update_paramaters()
 
-    
-    def update_paramaters(self):
+    def get_omega(self):
+        return self.omega
+    def get_speed(self):
+        return (self.vl + self.vr)/2
+        
+    def update_dir(self):
         if self.vl + self.vr > 0:
             self.dir = 1
         elif self.vl + self.vr < 0:
@@ -49,6 +57,7 @@ class MotionModel():
         else:
             self.dir = 0
 
+    def update_paramaters(self):
         if self.vl == self.vr:
             self.R = 0
             self.omega = 0
@@ -206,7 +215,7 @@ class MotionModel():
         # Make the new "supposed" point, project it to the wall
         # Project the trajectory of the agent if there were no wall on the wall vector
         #to_project = np.array([[point_of_contact.X, point_of_contact.Y], 
-        #                    [new_position.X, new_position.Y]])
+        #                    [new_positionupdate_dir.X, new_position.Y]])
         to_project = np.array([new_position.X - point_of_contact.X, new_position.Y - point_of_contact.Y])
 
         # Points of wall into vector

@@ -1,14 +1,12 @@
 import sys
 import pygame
 import time
+import argparse
+import math
 import json
-import numpy as np
+
 
 from pygame.locals import (
-    K_UP,
-    K_DOWN,
-    K_LEFT,
-    K_RIGHT,
     K_ESCAPE,
     KEYDOWN,
     QUIT,
@@ -16,7 +14,7 @@ from pygame.locals import (
 
 from utils.agent import Agent
 from utils.map import read_map
-from ann import Dense, Network
+from ann import Dense, Network, get_network
 
 class Settings:
     def __init__(self, w=1024, h=1024, margin=0):
@@ -30,28 +28,53 @@ class Simulation():
                         agent = None, 
                         time = None, 
                         render = True,
-                        simulation=False,
                         time_step = 100,
-                        weights = None
+                        weights = None,
+                        max_vision=100,
+                        max_speed=2.0,
+                        speed_increment=1.0,
+                        radius=50,
+                        localization = False,
+                        time_tick = 100,
+                        time_s = 0.1
                         ):
         self.map = map
         self.sett = Settings()
 
-        self.agent = agent
-        self.time = time # simulation runtime
-        self.render = render
-        self.simulation = simulation
-        self.time_step = time_step
-        self.counter = 0
+        self.time_tick = time_tick
 
+
+        self.time = time # simulation runtime
+        self.render = render # should an UI be rendered?
+        self.time_step = time_step # time step for the agent update
+        self.counter = 0
+        self.time_s = time_s
+
+        # Vision/Speed/Radius properties of an agent
+        self.max_vision = max_vision
+        self.max_speed = max_speed
+        self.speed_increment = speed_increment
+        self.radius = radius
+
+        # For simulating an agent with an ANN
         self.weights = weights
+
+        # For enabling/disabling localization
+        self.localization = localization
+
+
+        self.agent = agent
+        self.simulation = True # Used for knowing whether or not to let ANN take control or keyboard
+        if(self.agent == None):
+            self.simulation=False
+            self.setup_agent()
+
 
         self.clock = pygame.time.Clock()
 
         pygame.init()
 
         if self.render:
-
             pygame.font.init()
             self.font = pygame.font.SysFont('Comic Sans MS', 30)
             self.textsurface = self.font.render('Some Text', False, (0, 0, 0))
@@ -62,8 +85,19 @@ class Simulation():
             self.screen.fill((255, 255, 255))
 
 
-        self.setup()
-
+    def setup_agent(self):
+        # Setup the agent and his canvas objects
+        self.agent = Agent(
+                        map = self.map,
+                        radius = self.radius, 
+                        start_pos_index = 0,
+                        max_vision=self.max_vision,
+                        max_speed =self.max_speed,
+                        localization = self.localization,
+                        time_step = self.time_step,
+                        speed_increment=self.speed_increment,
+                        time_s = self.time_s
+                    )
 
     def simulate(self):
         if self.time == None:
@@ -75,23 +109,6 @@ class Simulation():
                 self.loop()
 
         return self.agent
-
-    def setup(self):
-        # Setup the UI/agent
-
-        if self.agent == None:
-            self.setup_agent()
-        else:
-            self.map = self.agent.get_map()
-
-
-    def setup_agent(self):
-        # Setup the agent and his canvas objects
-        self.agent = Agent(
-                        map = self.map,
-                        radius = 50, 
-                        start_pos_index = 0
-                    )
 
     def eventLoop(self):
         for event in pygame.event.get():
@@ -115,7 +132,6 @@ class Simulation():
         if self.counter == self.time_step:
             self.agent.ann_controller_run()
             self.counter = 0
-
         self.agent.update()
 
 
@@ -132,6 +148,25 @@ class Simulation():
             pygame.display.update()
 
         self.counter = self.counter + 10
+
+
+    def draw_localization(self):
+        # Draw the localization of the agent
+
+        # Draw the features on the map
+        for f in self.map["features"]:
+            p = (f.X, f.Y)
+            pygame.draw.circle(self.screen, [0,0,255], p, 10)
+        
+
+        # Draw predicted poses
+        (pred_poses, pred_sigmas) = self.agent.localization.get_predicted()
+        for p in pred_poses:
+            p = p.tolist()
+            p = (p[0][0], p[0][1])
+            pygame.draw.circle(self.screen, [0,255,0], p, 4)
+            
+
 
     def draw(self):
         self.screen.fill((255,255,255))
@@ -179,52 +214,75 @@ class Simulation():
         self.screen.blit(textsurface,(350,50))
 
 
+        if self.localization:
+            self.draw_localization()
+        
+
 def main():
-    map_path = "./train_maps/map_4"
-    map = read_map(map_path,0)
 
-    simulation = False
-    time_step = 100
+    parser = argparse.ArgumentParser(description='Simulate an agent.')
+    parser.add_argument('--map', action='store', default='./train_maps/map_1', 
+                        help='Path to the map you want to simulate.')
+    parser.add_argument('--render', action=argparse.BooleanOptionalAction, default=True,
+                        help='If you want to render or not the simulation.')
+    parser.add_argument('--time', action='store', default=math.inf, type=float,
+                        help='Amount of time the simulation runs. Default is inf.')
+    parser.add_argument('--time_step', action='store', default=10, type=int,
+                        help='Time step for agent update. Default is 100ms')
+    parser.add_argument('--time_tick', action='store', default=100, type=int,
+                        help='Number of times the agent refreshes each second. Default is 100.')
+    parser.add_argument('--weights', action='store', 
+                        help='Path to weights folder to simulate the agent.')
+    parser.add_argument('--max_vision', action='store', default=100, type=int,
+                        help='Max vision of the agent sensors.'),
+    parser.add_argument('--radius', action='store', default=50, type=int,
+                        help='Radius of the agent'),
+    parser.add_argument('--max_speed', action='store', default=2.0, type=float,
+                        help='Max speed of the agent.'),
+    parser.add_argument('--speed_increment', action='store', default=0.2, type=float,
+                        help='Speed increment of the agent.'),
+    parser.add_argument('--localization', action=argparse.BooleanOptionalAction, 
+                        default=False,
+                        help='Enable/Disable localization'),                        
+    args = parser.parse_args()
+
+
+    map = read_map(args.map,0)
     agent = None
-    render = True
-    if len(sys.argv)>1:
-        weigth_file = sys.argv[1]
-        f = open(weigth_file, 'r')
-        js = json.load(f)
 
-        # Create the agent with the specified ann
-        net_struct = js['nn_structure']
-        weights = json.loads(js['weights'])
-
-        layers = []
-        W = []
-        for i in range(len(net_struct)):
-            s = net_struct[i]
-            layers.append(
-                Dense(s[1], s[0])
-            )
-            w = np.array(weights[i])
-            W.append(w)
-        # Create the network with the specified layers
-        ann = Network(layers)
-        ann.set_weights(W)
-
+    perc = args.time_step/1000
+    time_step = int(perc * args.time_tick)
+    if(args.weights is not None):
+        ann = get_network(args.weights)
         agent = Agent(
                     map = map,
                     start_pos_index = 0,
-                    max_vision = 500,
+                    max_vision = args.max_vision,
+                    max_speed = args.max_speed,
+                    radius = args.radius,
                     ann = ann,
-                    max_speed = 2.0
-                )
-        simulation = True
+                    localization = args.localization,
+                    time_step = time_step,
+                    time_s = perc,
+                    speed_increment=args.speed_increment
+        )
+
 
     ui = Simulation(map=map, 
                     agent=agent, 
-                    simulation=simulation, 
-                    time_step=time_step,
-                    render=render
+                    render=args.render,
+                    max_vision=args.max_vision,
+                    max_speed = args.max_speed,
+                    radius = args.radius,
+                    localization = args.localization,
+                    time_tick = args.time_tick,
+                    time_step= time_step,
+                    time = args.time,
+                    time_s = perc,
+                    speed_increment = args.speed_increment
                     )
     ui.simulate()
+
 
 if __name__ == '__main__':
     main()

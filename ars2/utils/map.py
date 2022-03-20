@@ -19,7 +19,8 @@ def read_map(map_path, index):
     MAP = {
         "map":[],
         "start_points":[],
-        "index":index
+        "index":index,
+        "features":[]
     }
     for i in range(length_poly):
         poly = json.loads(map[i])
@@ -27,14 +28,20 @@ def read_map(map_path, index):
         for i in range(poly_len):
             c1 = poly[i]
             c2 = poly[i+1]
+            p = Point(c1[0], c1[1])
+
+            MAP["features"].append(p)
             MAP["map"].append(
-                Object(Point(c1[0], c1[1]), [
+                Object(p, [
                     Vector(Point(0,0), Point(c2[0]-c1[0], c2[1] - c1[1]))
                 ], type="line")
             )
 
         c1 = poly[0]
         c2 = poly[len(poly)-1]
+        p = Point(c2[0], c2[1])
+        MAP["features"].append(p)
+        
         MAP["map"].append(
             Object(Point(c1[0], c1[1]), [
                 Vector(Point(0,0), Point(c2[0]-c1[0], c2[1] - c1[1]))
