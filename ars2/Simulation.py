@@ -156,6 +156,7 @@ class Simulation():
     def draw_localization(self):
         # Draw the localization of the agent
 
+
         # Draw the features on the map
         for f in self.map["features"]:
             p = (f.X, f.Y)
@@ -170,6 +171,22 @@ class Simulation():
             (f,d) = g
             p = (f.X, f.Y)
             pygame.draw.line(self.screen, [0, 255, 0], p, c)
+
+
+        # Draw covariance matrices
+        covariance = self.agent.localization.covariance_hist
+        counter = 0
+        for c in covariance:
+            if counter % 100 == 0:
+                print("c:" + str(c))
+                w = c[0][0]
+                h = c[1][1]
+                t = c[2][2]
+                print(counter)
+                p = self.agent.position_hist[counter]
+                ellipse_rect = pygame.Rect(p.X - w/2, p.Y - h/2, w + w/2, h + h/2)
+                pygame.draw.ellipse(self.screen, [0,50,255], ellipse_rect, width=1)
+            counter += 1
 
         # Draw predicted poses
         counter = 0
@@ -190,7 +207,8 @@ class Simulation():
                 p = (p[0][0], p[0][1])
                 pygame.draw.circle(self.screen, [0,0,0], p, 3)
             counter += 1
-        
+
+        # Draw actual path
         for hist_pos in self.agent.position_hist:
             p = (hist_pos.X, hist_pos.Y)
             pygame.draw.circle(self.screen, [0, 0, 0], p, 1)

@@ -27,7 +27,7 @@ class Agent():
         self.max_vision = max_vision
         self.max_speed = max_speed
 
-        self.position_hist = []
+        self.position_hist = [self.position]
 
         self.fitness = 0
 
@@ -219,6 +219,8 @@ class Agent():
             new_position = self.position
 
         if(self.localization != None):
+            # Put position history
+            self.position_hist.append(self.position)
             self.localization.update(new_position, self.theta)
         
         # If there is no change in movement, then just skip the update
@@ -235,9 +237,7 @@ class Agent():
         self.theta = new_theta
         self.position = new_position
 
-        # Put position history
-        self.position_hist.append(self.position)
-    
+
         self.update_agent_data(is_colliding, is_colliding_corner, self.position)
 
 

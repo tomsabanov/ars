@@ -12,12 +12,12 @@ class Localization():
         self.max_vision = max_vision
 
         self.mu_t = np.array([pos.X, pos.Y, theta])
-        self.sigma_t = np.identity(3) * 0.001
+        self.sigma_t = np.identity(3) * 10
 
         self.epsilon = 1.0
 
         # Noise of sensor model
-        self.Q = np.identity(3) * 0.001
+        self.Q = np.identity(3) * 1
 
         mu, sigma = 1, 0.1 # mean and standard deviation
         self.delta = np.random.normal(mu, sigma, 1)[0]
@@ -27,7 +27,7 @@ class Localization():
         self.u = np.array([v, w])
 
 
-        self.R_t = np.identity(3) * 0.001
+        self.R_t = np.identity(3) * 0.1
 
 
         self.predicted_poses = list()
@@ -37,6 +37,8 @@ class Localization():
         self.corrected_sigmas = list()
 
         self.visible_features = list()
+
+        self.covariance_hist = list()
     
     def update_speed(self, v,w):
         self.u = np.array([v, w])
@@ -205,6 +207,7 @@ class Localization():
 
             self.mu_t = np.array([mu_t_bar[0], mu_t_bar[1], mu_t_bar[2]])
             self.sigma_t = sigma_t_bar
+            self.covariance_hist.append(self.sigma_t)
             return
 
 
@@ -236,6 +239,8 @@ class Localization():
 
         self.mu_t = np.array([mu_t[0], mu_t[1], mu_t[2]])
         self.sigma_t = sigma_t
+
+        self.covariance_hist.append(self.sigma_t)
 
         print("mu_t " + str(self.mu_t))
 
