@@ -169,23 +169,31 @@ class Simulation():
         for g in vis_feat:
             (f,d) = g
             p = (f.X, f.Y)
-            pygame.draw.line(self.screen, [0, 0, 255], p, c)
+            pygame.draw.line(self.screen, [0, 255, 0], p, c)
 
         # Draw predicted poses
+        counter = 0
         (pred_poses, pred_sigmas) = self.agent.localization.get_predicted()
         for p in pred_poses:
-            p = p.tolist()
-            p = (p[0][0], p[0][1])
-            pygame.draw.circle(self.screen, [0,255,0], p, 3)
-        
+            if counter % 10 == 0:
+                p = p.tolist()
+                p = (p[0][0], p[0][1])
+                pygame.draw.circle(self.screen, [0,0,0], p, 3)
+            counter += 1
+
         # Draw corrected poses
+        counter = 0
         (pred_poses, pred_sigmas) = self.agent.localization.get_corrected()
         for p in pred_poses:
-            p = p.tolist()
-            p = (p[0][0], p[0][1])
-            pygame.draw.circle(self.screen, [255,0,0], p, 3)
+            if counter % 10 == 0:
+                p = p.tolist()
+                p = (p[0][0], p[0][1])
+                pygame.draw.circle(self.screen, [0,0,0], p, 3)
+            counter += 1
         
-
+        for hist_pos in self.agent.position_hist:
+            p = (hist_pos.X, hist_pos.Y)
+            pygame.draw.circle(self.screen, [0, 0, 0], p, 1)
             
 
 
@@ -203,7 +211,6 @@ class Simulation():
         pos = self.agent.get_circle_coordinates()
         c = (pos.X, pos.Y)
         pygame.draw.circle(self.screen, [255,0,0], c, self.agent.radius, width=1)
-
 
         # Draw agent orientation line
         l_coords = self.agent.get_line_coordinates()

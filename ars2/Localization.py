@@ -206,7 +206,8 @@ class Localization():
             self.mu_t = np.array([mu_t_bar[0], mu_t_bar[1], mu_t_bar[2]])
             self.sigma_t = sigma_t_bar
             return
-        
+
+
 
         # Do triangulation 
         z_t = self.triangulation()

@@ -27,6 +27,8 @@ class Agent():
         self.max_vision = max_vision
         self.max_speed = max_speed
 
+        self.position_hist = []
+
         self.fitness = 0
 
 
@@ -233,6 +235,8 @@ class Agent():
         self.theta = new_theta
         self.position = new_position
 
+        # Put position history
+        self.position_hist.append(self.position)
     
         self.update_agent_data(is_colliding, is_colliding_corner, self.position)
 
