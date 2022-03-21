@@ -159,7 +159,7 @@ class Simulation():
         # Draw the features on the map
         for f in self.map["features"]:
             p = (f.X, f.Y)
-            pygame.draw.circle(self.screen, [0,0,255], p, 10)
+            pygame.draw.circle(self.screen, [0,0,0], p, 10)
         
 
         # Draw visible features lines
