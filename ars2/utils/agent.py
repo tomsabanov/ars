@@ -217,7 +217,7 @@ class Agent():
             new_position = self.position
 
         if(self.localization != None):
-            self.localization.update(new_position, new_theta)
+            self.localization.update(new_position)
         
         # If there is no change in movement, then just skip the update
         if change == False:

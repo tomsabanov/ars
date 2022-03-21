@@ -2,7 +2,7 @@
 
 # Point class that is a 2D point with X and Y
 import math
-
+import numpy as np
 
 class Point():
     def __init__(self, X, Y):

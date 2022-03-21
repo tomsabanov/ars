@@ -162,20 +162,29 @@ class Simulation():
             pygame.draw.circle(self.screen, [0,0,255], p, 10)
         
 
+        # Draw visible features lines
+        vis_feat = self.agent.localization.get_visible_features()
+        pos = self.agent.get_circle_coordinates()
+        c = (pos.X, pos.Y)
+        for g in vis_feat:
+            (f,d) = g
+            p = (f.X, f.Y)
+            pygame.draw.line(self.screen, [0, 0, 255], p, c)
+
         # Draw predicted poses
         (pred_poses, pred_sigmas) = self.agent.localization.get_predicted()
         for p in pred_poses:
             p = p.tolist()
             p = (p[0][0], p[0][1])
-            pygame.draw.circle(self.screen, [0,255,0], p, 4)
+            pygame.draw.circle(self.screen, [0,255,0], p, 3)
         
-        # Draw visible features lines
-        vis_feat = self.agent.localization.get_visible_features()
-        pos = self.agent.get_circle_coordinates()
-        c = (pos.X, pos.Y)
-        for f in vis_feat:
-            p = (f.X, f.Y)
-            pygame.draw.line(self.screen, [0, 0, 255], p, c)
+        # Draw corrected poses
+        (pred_poses, pred_sigmas) = self.agent.localization.get_corrected()
+        for p in pred_poses:
+            p = p.tolist()
+            p = (p[0][0], p[0][1])
+            pygame.draw.circle(self.screen, [255,0,0], p, 3)
+        
 
             
 
