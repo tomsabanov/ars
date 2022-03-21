@@ -131,12 +131,25 @@ class Localization():
         v2_u = self.unit_vector(v2)
         return np.arccos(np.clip(np.dot(v1_u, v2_u), -1.0, 1.0))
 
+
+
+    def estimate_bearing2(self, p, theta):
+        bearing = 0
+
+        for g in self.visible_features:
+            (f, r) = g
+            #bearing += self.get_bearing(p[0], p[1], f.X, f.Y)
+
+        return bearing / len(self.visible_features)
+
     def estimate_bearing(self, p, theta): 
         bearing = 0
+        print("theta: " + str(theta))
         v = np.array([1,0])
         v1 = np.array([math.cos(theta),0])
-
+        print("v1: " + str(v1))
         p = np.array([p[0], p[1]])
+        print("p: " + str(p))
         for g in self.visible_features:
             (f,r) = g
             # get vector between f and p
@@ -146,14 +159,23 @@ class Localization():
             # Get angle between v2 and v1
             beta = self.angle_between(v1,v2)
             # Get global angle of beacon
-            alpha = self.angle_between(v, v2)
+            alpha = self.angle_between(v, v1)
 
             bearing = bearing + (beta - alpha)
 
-        return bearing/len(self.visible_features)
+        (f, r) = self.visible_features[0]
+        f = np.array([f.X, f.Y])
+        v2 = f - p
+        print("v2: " + str(v2))
+        alpha = self.angle_between(v1, f)
+        print("alpha: " + str(alpha))
+
+        #angle = math.atan2()
+        return alpha
+        #return bearing/len(self.visible_features)
 
         
-    def update(self, real_pos):
+    def update(self, real_pos, ANGLE):
         # real_pos and real_theta used for calculating the features in range
         self.visible_features = list()
 
@@ -190,8 +212,9 @@ class Localization():
         z_t = self.triangulation()
         # Estimate bearing of the calculated z_t=[x,y] based on estimated theta 
         # and angle of beacons
-        bearing = self.estimate_bearing(z_t, theta)
-
+        bearing = self.estimate_bearing2(z_t, theta)
+        bearing = ANGLE
+        print("bearing: " + str(bearing))
         # Construct z_t with x,y and bearing values and apply noise
         z_t = self.epsilon * np.array([z_t[0],z_t[1], bearing])
 
@@ -213,8 +236,7 @@ class Localization():
         self.mu_t = np.array([mu_t[0], mu_t[1], mu_t[2]])
         self.sigma_t = sigma_t
 
-
-
+        print("mu_t " + str(self.mu_t))
 
     def print(self):
         return
