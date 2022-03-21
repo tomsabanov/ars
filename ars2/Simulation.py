@@ -152,6 +152,15 @@ class Simulation():
 
         self.counter = self.counter + 10
 
+    # This part is taken from https://stackoverflow.com/questions/65767785/how-to-draw-a-rotated-ellipse-using-pygame
+    # This is to draw a rotate ellipse in pygame. In our case to display the covariance matrix
+    def draw_ellipse_angle(self, surface, color, rect, angle, width=0):
+        target_rect = pygame.Rect(rect)
+        shape_surf = pygame.Surface(target_rect.size, pygame.SRCALPHA)
+        pygame.draw.ellipse(shape_surf, color, (0, 0, *target_rect.size), width)
+        rotated_surf = pygame.transform.rotate(shape_surf, angle)
+        surface.blit(rotated_surf, rotated_surf.get_rect(center=target_rect.center))
+
 
     def draw_localization(self):
         # Draw the localization of the agent
@@ -182,10 +191,9 @@ class Simulation():
                 w = c[0][0]
                 h = c[1][1]
                 t = c[2][2]
-                print(counter)
                 p = self.agent.position_hist[counter]
-                ellipse_rect = pygame.Rect(p.X - w/2, p.Y - h/2, w + w/2, h + h/2)
-                pygame.draw.ellipse(self.screen, [0,50,255], ellipse_rect, width=1)
+                self.draw_ellipse_angle(self.screen, [0,50,255], (p.X - w/2, p.Y - h/2, w + w/2, h + h/2), t, 1)
+
             counter += 1
 
         # Draw predicted poses
