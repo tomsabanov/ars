@@ -202,7 +202,7 @@ class Simulation():
         # Draw the agent
         pos = self.agent.get_circle_coordinates()
         c = (pos.X, pos.Y)
-        pygame.draw.circle(self.screen, [255,0,0], c, self.agent.radius)
+        pygame.draw.circle(self.screen, [255,0,0], c, self.agent.radius, width=1)
 
 
         # Draw agent orientation line
