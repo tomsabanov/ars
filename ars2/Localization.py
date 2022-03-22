@@ -1,3 +1,5 @@
+import random
+
 import numpy as np
 import math
 import pygame
@@ -141,6 +143,23 @@ class Localization():
         v2_u = self.unit_vector(v2)
         return np.arccos(np.clip(np.dot(v1_u, v2_u), -1.0, 1.0))
 
+    # Add noise
+    def add_noise(self):
+
+        s1 = random.randrange(10000) / 20000
+        s2 = random.randrange(10000) / 20000
+        s3 = random.randrange(10000) / 20000
+
+        self.Q = np.array([[s1, 0, 0], [0, s2, 0], [0, 0, s3]])
+        print("Q: " + str(self.Q))
+
+        s1 = random.randrange(10000) / 20000
+        s2 = random.randrange(10000) / 20000
+        s3 = random.randrange(10000) / 20000
+
+        self.R_t = np.array([[s1, 0, 0], [0, s2, 0], [0, 0, s3]])
+
+        self.delta = random.randrange(10) / 9 + 0.5
 
     def get_robot_heading(self, p, theta):
         u = np.array([math.cos(theta),0]) # robot heading
@@ -166,7 +185,6 @@ class Localization():
             # Get angle between v2 and v1
             beta = self.angle_between(v1,v2)
 
-
             bearing = bearing + (beta-alpha)
 
 
@@ -178,6 +196,8 @@ class Localization():
 
         # real_pos and real_theta used for calculating the features in range
         self.visible_features = list()
+
+        self.add_noise()
 
         theta = self.mu_t[2]
         self.B = np.matrix([
