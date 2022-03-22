@@ -1,3 +1,5 @@
+import random
+
 import numpy as np
 import math
 import pygame
@@ -133,6 +135,21 @@ class Localization():
         v2_u = self.unit_vector(v2)
         return np.arccos(np.clip(np.dot(v1_u, v2_u), -1.0, 1.0))
 
+    # Add noise
+    def add_noise(self):
+
+        s1 = random.randrange(10000) / 100000
+        s2 = random.randrange(10000) / 100000
+        s3 = random.randrange(10000) / 100000
+
+        self.Q = np.array([[s1, 0, 0], [0, s2, 0], [0, 0, s3]])
+        print("Q: " + str(self.Q))
+
+        s1 = random.randrange(10000) / 10000
+        s2 = random.randrange(10000) / 10000
+        s3 = random.randrange(10000) / 10000
+
+        self.R_t = np.array([[s1, 0, 0], [0, s2, 0], [0, 0, s3]])
 
 
     def estimate_bearing2(self, p, theta):
@@ -180,6 +197,8 @@ class Localization():
     def update(self, real_pos, ANGLE):
         # real_pos and real_theta used for calculating the features in range
         self.visible_features = list()
+
+        self.add_noise()
 
         theta = self.mu_t[2]
         self.B = np.matrix([
