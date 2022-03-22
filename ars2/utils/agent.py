@@ -217,6 +217,7 @@ class Agent():
 
         if new_position == None:
             new_position = self.position
+            new_theta = self.theta
 
         if(self.localization != None):
             # Put position history

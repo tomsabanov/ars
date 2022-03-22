@@ -6,28 +6,46 @@ import itertools
 
 
 class Localization():
-    def __init__(self, pos, theta, v, w, time_step, features, max_vision):
+    def __init__(self, pos, theta, v, w, time_step, features, max_vision,
+                sigma_err = 0.01, eps_t = 0.01, delta_t = 0.01, 
+                qx=0.01, qy=0.01, qt = 0.01, rx=0.01, ry=0.01, rt=0.01):
         
         self.features = features
         self.max_vision = max_vision
-
-        self.mu_t = np.array([pos.X, pos.Y, theta])
-        self.sigma_t = np.identity(3) * 10
-
-        self.epsilon = 1.0
-
-        # Noise of sensor model
-        self.Q = np.identity(3) * 1
-
-        mu, sigma = 1, 0.1 # mean and standard deviation
-        self.delta = np.random.normal(mu, sigma, 1)[0]
+        
+        # constants
         self.t = 1
-
         self.A = np.identity(3)
         self.u = np.array([v, w])
 
+        # ERROR OF INITIAL POSITION 
+        self.sigma_err = sigma_err
+        self.mu_t = np.array([pos.X, pos.Y, theta])
+        self.sigma_t = np.identity(3) * sigma_err
 
-        self.R_t = np.identity(3) * 0.1
+        # Noise of sensor model
+        self.Q = np.array([
+            [qx**2,0,0],
+            [0,qy**2,0],
+            [0,0,qt**2]
+        ])
+
+        # Noise of motion model
+        self.R_t = np.array([
+            [rx**2,0,0],
+            [0,ry**2,0],
+            [0,0,rt**2]
+        ])
+
+
+        # Process noise, distributed with covariance R_t
+        self.epsilon_t = eps_t        
+
+        # Measurement noise, distributed with covariance Q_t
+        mu, sigma = 1, (qx + qy + qt)/3 # mean and standard deviation
+        self.delta = np.random.normal(mu, sigma, 1)[0]
+        
+
 
 
         self.predicted_poses = list()
@@ -116,68 +134,48 @@ class Localization():
 
 
     def unit_vector(self, vector):
-        """ Returns the unit vector of the vector.  """
         return vector / np.linalg.norm(vector)
 
     def angle_between(self,v1, v2):
-        """ Returns the angle in radians between vectors 'v1' and 'v2'::
-
-                >>> angle_between((1, 0, 0), (0, 1, 0))
-                1.5707963267948966
-                >>> angle_between((1, 0, 0), (1, 0, 0))
-                0.0
-                >>> angle_between((1, 0, 0), (-1, 0, 0))
-                3.141592653589793
-        """
         v1_u = self.unit_vector(v1)
         v2_u = self.unit_vector(v2)
         return np.arccos(np.clip(np.dot(v1_u, v2_u), -1.0, 1.0))
 
 
+    def get_robot_heading(self, p, theta):
+        u = np.array([math.cos(theta),0]) # robot heading
 
-    def estimate_bearing2(self, p, theta):
-        bearing = 0
-
-        for g in self.visible_features:
-            (f, r) = g
-            #bearing += self.get_bearing(p[0], p[1], f.X, f.Y)
-
-        return bearing / len(self.visible_features)
+        return u
 
     def estimate_bearing(self, p, theta): 
         bearing = 0
-        print("theta: " + str(theta))
-        v = np.array([1,0])
-        v1 = np.array([math.cos(theta),0])
-        print("v1: " + str(v1))
         p = np.array([p[0], p[1]])
-        print("p: " + str(p))
+        v = np.array([1,0]) # global vector
+        v1 = self.get_robot_heading(p, theta)
+
+
         for g in self.visible_features:
             (f,r) = g
-            # get vector between f and p
+            # get vector between beacon and robot
             f = np.array([f.X,f.Y])
             v2 = f - p
 
+            # Get global angle of beacon
+            alpha = self.angle_between(v, v2)
+
             # Get angle between v2 and v1
             beta = self.angle_between(v1,v2)
-            # Get global angle of beacon
-            alpha = self.angle_between(v, v1)
 
-            bearing = bearing + (beta - alpha)
 
-        (f, r) = self.visible_features[0]
-        f = np.array([f.X, f.Y])
-        v2 = f - p
-        print("v2: " + str(v2))
-        alpha = self.angle_between(v1, f)
-        print("alpha: " + str(alpha))
+            bearing = bearing + (beta-alpha)
 
-        #angle = math.atan2()
-        return alpha
-        #return bearing/len(self.visible_features)
+
+        return bearing/len(self.visible_features)
 
         
-    def update(self, real_pos, ANGLE):
+    def update(self, real_pos, real_theta):
+        real_theta = real_theta % math.pi
+
         # real_pos and real_theta used for calculating the features in range
         self.visible_features = list()
 
@@ -189,12 +187,17 @@ class Localization():
                            ])
 
         # Prediction
-        mu_t_bar = self.A.dot(self.mu_t) + self.B.dot(self.u)
+        mu_t_bar = np.add(self.mu_t, np.dot(self.B, self.u))
         sigma_t_bar = np.dot(np.dot(self.A, self.sigma_t), np.transpose(self.A)) + self.R_t
 
 
         # Find visible features
         self.find_features(real_pos)
+
+
+        pred_theta = mu_t_bar.tolist()[0][2]
+        #print("original angle: " + str(real_theta))
+        #print("predicted angle: " + str(pred_theta))
 
         # If there are at least three features found - we do triangulation 
         # and correct our prediction, otherwise just use the prediction
@@ -214,11 +217,16 @@ class Localization():
 
         # Do triangulation 
         z_t = self.triangulation()
+
         # Estimate bearing of the calculated z_t=[x,y] based on estimated theta 
         # and angle of beacons
-        bearing = self.estimate_bearing2(z_t, theta)
-        bearing = ANGLE
-        print("bearing: " + str(bearing))
+        bearing = self.estimate_bearing(z_t, pred_theta)
+        bearing = real_theta
+        #print("Estimated bearing: " + str(bearing))
+        #print("Original theta " + str(real_theta))
+        #print("Predicted theta " + str(pred_theta))
+
+
         # Construct z_t with x,y and bearing values and apply noise
         z_t = self.epsilon * np.array([z_t[0],z_t[1], bearing])
 
@@ -242,7 +250,7 @@ class Localization():
 
         self.covariance_hist.append(self.sigma_t)
 
-        print("mu_t " + str(self.mu_t))
+        #print("mu_t " + str(self.mu_t))
 
     def print(self):
         return

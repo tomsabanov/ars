@@ -181,20 +181,22 @@ class Simulation():
             p = (f.X, f.Y)
             pygame.draw.line(self.screen, [0, 255, 0], p, c)
 
-
+        '''
         # Draw covariance matrices
         covariance = self.agent.localization.covariance_hist
         counter = 0
         for c in covariance:
             if counter % 100 == 0:
-                print("c:" + str(c))
+                #print("c:" + str(c))
                 w = c[0][0]
                 h = c[1][1]
                 t = c[2][2]
                 p = self.agent.position_hist[counter]
                 self.draw_ellipse_angle(self.screen, [0,50,255], (p.X - w/2, p.Y - h/2, w + w/2, h + h/2), t, 1)
 
-            counter += 1
+            counter += 1        
+        '''
+
 
         # Draw predicted poses
         counter = 0
@@ -208,8 +210,8 @@ class Simulation():
 
         # Draw corrected poses
         counter = 0
-        (pred_poses, pred_sigmas) = self.agent.localization.get_corrected()
-        for p in pred_poses:
+        (corr_poses, corr_sigmas) = self.agent.localization.get_corrected()
+        for p in corr_poses:
             if counter % 10 == 0:
                 p = p.tolist()
                 p = (p[0][0], p[0][1])
@@ -219,7 +221,7 @@ class Simulation():
         # Draw actual path
         for hist_pos in self.agent.position_hist:
             p = (hist_pos.X, hist_pos.Y)
-            pygame.draw.circle(self.screen, [0, 0, 0], p, 1)
+            pygame.draw.circle(self.screen, [0, 0, 255], p, 1)
             
 
 
