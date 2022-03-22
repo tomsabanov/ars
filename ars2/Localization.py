@@ -138,18 +138,20 @@ class Localization():
     # Add noise
     def add_noise(self):
 
-        s1 = random.randrange(10000) / 100000
-        s2 = random.randrange(10000) / 100000
-        s3 = random.randrange(10000) / 100000
+        s1 = random.randrange(10000) / 20000
+        s2 = random.randrange(10000) / 20000
+        s3 = random.randrange(10000) / 20000
 
         self.Q = np.array([[s1, 0, 0], [0, s2, 0], [0, 0, s3]])
         print("Q: " + str(self.Q))
 
-        s1 = random.randrange(10000) / 10000
-        s2 = random.randrange(10000) / 10000
-        s3 = random.randrange(10000) / 10000
+        s1 = random.randrange(10000) / 20000
+        s2 = random.randrange(10000) / 20000
+        s3 = random.randrange(10000) / 20000
 
         self.R_t = np.array([[s1, 0, 0], [0, s2, 0], [0, 0, s3]])
+
+        self.delta = random.randrange(10) / 9 + 0.5
 
 
     def estimate_bearing2(self, p, theta):
@@ -163,12 +165,9 @@ class Localization():
 
     def estimate_bearing(self, p, theta): 
         bearing = 0
-        print("theta: " + str(theta))
         v = np.array([1,0])
         v1 = np.array([math.cos(theta),0])
-        print("v1: " + str(v1))
         p = np.array([p[0], p[1]])
-        print("p: " + str(p))
         for g in self.visible_features:
             (f,r) = g
             # get vector between f and p
@@ -185,9 +184,7 @@ class Localization():
         (f, r) = self.visible_features[0]
         f = np.array([f.X, f.Y])
         v2 = f - p
-        print("v2: " + str(v2))
         alpha = self.angle_between(v1, f)
-        print("alpha: " + str(alpha))
 
         #angle = math.atan2()
         return alpha
@@ -237,7 +234,6 @@ class Localization():
         # and angle of beacons
         bearing = self.estimate_bearing2(z_t, theta)
         bearing = ANGLE
-        print("bearing: " + str(bearing))
         # Construct z_t with x,y and bearing values and apply noise
         z_t = self.epsilon * np.array([z_t[0],z_t[1], bearing])
 
